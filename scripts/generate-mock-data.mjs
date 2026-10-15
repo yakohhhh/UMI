@@ -11,9 +11,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const GEO = path.resolve(process.argv[2] || process.env.BCN_GEODATA || "../bcn-geodata");
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."); // works on Windows too
 const OUT = path.join(ROOT, "src/lib/mock/data");
 const LANDING_OUT = path.join(ROOT, "src/components/landing/data");
 fs.mkdirSync(OUT, { recursive: true });

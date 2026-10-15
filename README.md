@@ -28,9 +28,18 @@ npm run dev        # http://localhost:3000
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run mock:generate -- <path>` | Regenerate the mock datasets (see [Mock data](#mock-data)) |
 
+### Windows
+
+Everything runs natively on Windows (no WSL needed):
+
+1. Install Node.js LTS from [nodejs.org](https://nodejs.org) (or `winget install OpenJS.NodeJS.LTS`) and Git (`winget install Git.Git`), then open a new terminal.
+2. `git clone https://github.com/yakohhhh/UMI.git`, `cd UMI`, `npm install`, `npm run dev`.
+
+If PowerShell answers *"running scripts is disabled on this system"*, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use `npm.cmd` instead of `npm`. Keep the project outside OneDrive-synced folders: syncing `node_modules` slows installs down and can lock files.
+
 ### Environment
 
-Copy `.env.example` to `.env.local`. Every variable is optional.
+Copy `.env.example` to `.env.local` (`copy .env.example .env.local` on Windows). Every variable is optional.
 
 | Variable | Effect |
 | --- | --- |
