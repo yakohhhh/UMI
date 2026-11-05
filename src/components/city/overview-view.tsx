@@ -57,9 +57,10 @@ export function OverviewView() {
       </PageHeader>
 
       {!data ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5" aria-busy="true" aria-label="Loading key figures">
+        // same layout as the loaded tiles (a one-row scroller on phones), so nothing jumps when they arrive
+        <div className="-mx-4 flex gap-3 overflow-hidden px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:px-0 md:grid-cols-3 xl:grid-cols-5" aria-busy="true" aria-label="Loading key figures">
           {[0, 1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-40 rounded-2xl" />
+            <Skeleton key={i} className="h-[169px] w-[78%] shrink-0 rounded-2xl sm:w-auto" />
           ))}
         </div>
       ) : data.kpis.length === 0 ? (
@@ -150,7 +151,7 @@ export function OverviewView() {
                             type="button"
                             onClick={() => toggleDistrict(d.name)}
                             aria-pressed={on}
-                            className="flex items-center gap-2 rounded text-left font-medium hover:text-accent-ink"
+                            className="-my-2 flex min-h-9 w-full items-center gap-2 rounded py-2 text-left font-medium hover:text-accent-ink"
                           >
                             <span className="size-2 shrink-0 rounded-full" style={{ background: BAND_VAR[meta.band(d)].fill }} aria-hidden />
                             {d.name}

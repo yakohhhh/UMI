@@ -110,7 +110,7 @@ export function Dimensions() {
             <div aria-hidden className="absolute -top-24 -right-24 size-72 rounded-full opacity-25 blur-[100px]" style={{ background: p.accent }} />
             <div className="relative max-w-md">
               <div className="dim-reveal flex items-center gap-3">
-                <span className="font-mono text-sm text-asphalt-400">{p.n}</span>
+                <span className="font-mono text-sm text-asphalt-300">{p.n}</span>
                 <span className="h-px w-8 bg-white/15" />
                 <span className="label-mono" style={{ color: p.accent }}>
                   {p.key}

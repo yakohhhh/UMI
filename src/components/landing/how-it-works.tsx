@@ -21,8 +21,12 @@ export function HowItWorks() {
       mm.add({ desktop: "(min-width: 1024px) and (prefers-reduced-motion: no-preference)", mobile: "(max-width: 1023px) and (prefers-reduced-motion: no-preference)" }, (ctx) => {
         const { desktop } = ctx.conditions as Record<string, boolean>;
         const steps = gsap.utils.toArray<HTMLElement>(".hiw-step");
+        // Desktop pins the section while the steps light up, so the title never slides under the fixed navbar
+        // before the sequence ends. Phones read the vertical list as it scrolls past.
         const tl = gsap.timeline({
-          scrollTrigger: { trigger: ".hiw-list", start: desktop ? "top 70%" : "top 75%", end: desktop ? "bottom 55%" : "bottom 60%", scrub: 0.6 },
+          scrollTrigger: desktop
+            ? { trigger: root.current, start: "top top", end: "+=90%", pin: true, scrub: 0.6, anticipatePin: 1 }
+            : { trigger: ".hiw-list", start: "top 75%", end: "bottom 60%", scrub: 0.6 },
         });
         tl.fromTo(".hiw-line", desktop ? { scaleX: 0 } : { scaleY: 0 }, desktop ? { scaleX: 1, ease: "none", duration: 1 } : { scaleY: 1, ease: "none", duration: 1 }, 0);
         steps.forEach((step, i) => {
@@ -37,8 +41,8 @@ export function HowItWorks() {
   );
 
   return (
-    <section ref={root} id="how-it-works" aria-labelledby="hiw-title" className="relative bg-asphalt-900 py-28 sm:py-36">
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+    <section ref={root} id="how-it-works" aria-labelledby="hiw-title" className="relative bg-asphalt-900 py-28 sm:py-36 lg:motion-safe:flex lg:motion-safe:h-[100svh] lg:motion-safe:items-center lg:motion-safe:py-0">
+      <div className="mx-auto w-full max-w-6xl px-5 sm:px-8">
         <p className="label-mono text-signal">How it works</p>
         <h2 id="hiw-title" className="mt-3 max-w-2xl font-display text-4xl font-semibold tracking-tight text-paper sm:text-5xl">
           From your morning ride to a better map.
@@ -55,7 +59,7 @@ export function HowItWorks() {
                 <s.icon className="relative size-6 text-paper" />
               </div>
               <div className="hiw-copy">
-                <p className="font-mono text-xs text-asphalt-400">0{i + 1}</p>
+                <p className="font-mono text-xs text-asphalt-300">0{i + 1}</p>
                 <h3 className="mt-1 font-display text-xl font-semibold text-paper">{s.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-asphalt-300 lg:mx-auto lg:max-w-[13rem]">{s.body}</p>
               </div>

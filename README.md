@@ -103,6 +103,7 @@ Each street segment has four hourly scores (0–100), computed from the sensors:
 - Animations use transform and opacity only. With `prefers-reduced-motion`, Lenis is off, nothing is pinned or scrubbed, sections are laid out statically (the phone screens follow a plain list of steps), and app transitions drop their movement.
 - Mobile gets simplified sequences (no horizontal pin, sticky phone with scrolling steps).
 - WCAG AA contrast on both themes, visible focus, skip links, landmarks, labelled controls. Maps have keyboard-accessible alternatives (street search and lists, sortable tables); charts carry text summaries; the mic never records audio, and the UI says so.
+- Performance: the hero title and paragraph animate in with CSS from the first paint (they are the LCP), looping animations pause in off-screen sections, and no continuous rAF loop runs while the pointer rests. Measure Lighthouse on `npm run build && npm start`: `npm run dev` ships unminified React and scores about 20 points lower (landing, mobile: ~69 in dev vs ~90 in production).
 
 ## Mock data
 

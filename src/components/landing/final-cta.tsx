@@ -71,14 +71,14 @@ export function FinalCta() {
               }}
               aria-invalid={status === "invalid"}
               aria-describedby="cta-hint"
-              className="h-14 flex-1 rounded-full border border-white/12 bg-white/[0.05] px-6 text-paper placeholder:text-asphalt-400 focus-visible:border-signal/60 focus-visible:ring-4 focus-visible:ring-signal/20 focus-visible:outline-none"
+              className="h-14 w-full shrink-0 rounded-full border border-white/20 bg-asphalt-900/70 px-6 text-base text-paper sm:w-auto sm:flex-1 placeholder:text-asphalt-300 focus-visible:border-signal/60 focus-visible:ring-4 focus-visible:ring-signal/20 focus-visible:outline-none"
             />
             <Button type="submit" size="xl" pill disabled={status === "sending"}>
               {status === "sending" ? "Reserving…" : "Pre-order"} <ArrowRight />
             </Button>
           </form>
         )}
-        <p id="cta-hint" className={`cta-reveal mt-4 text-xs ${status === "invalid" ? "text-signal" : "text-asphalt-400"}`}>
+        <p id="cta-hint" className={`cta-reveal mt-4 text-xs ${status === "invalid" ? "text-signal" : "text-asphalt-300"}`}>
           {status === "invalid" ? "That email doesn't look right — check for a typo." : "No payment today. Unsubscribe in one click."}
         </p>
       </div>
@@ -102,7 +102,7 @@ export function Footer() {
         </div>
         {FOOTER.map((col) => (
           <nav key={col.title} aria-label={col.title}>
-            <h3 className="label-mono text-asphalt-400">{col.title}</h3>
+            <h3 className="label-mono text-asphalt-300">{col.title}</h3>
             <ul className="mt-4 space-y-2.5 text-sm">
               {col.links.map(([label, href]) => (
                 <li key={label}>

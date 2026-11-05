@@ -140,6 +140,9 @@ const LAYERS: Layer[] = [
 const FLUSH_Z = [27, 18, 14, 12, 4, -6, -16];
 const EXPLODED_Z = [318, 214, 118, 30, -64, -160, -270];
 
+/** Same as CSS brightness(k) on a #rrggbb colour, baked in: filters on 3D layers are costly. */
+const shade = (hex: string, k: number) => `rgb(${[1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * k)).join(" ")})`;
+
 export function ExplodedView() {
   const root = useRef<HTMLElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
@@ -155,18 +158,25 @@ export function ExplodedView() {
       const state = { rx: 0, rz: 0, scale: 1, explode: 0, shift: 0, labels: LAYERS.map(() => 0) };
       let compact = false;
       let spread = 1;
+      // cached: reading clientWidth inside apply() forced a layout on every scrubbed frame
+      let sceneW = scene.clientWidth;
+      const ro = new ResizeObserver(([entry]) => {
+        sceneW = entry.contentRect.width;
+      });
+      ro.observe(scene);
 
       const apply = () => {
         const P = 1800;
         const rx = (state.rx * Math.PI) / 180;
         const rz = (state.rz * Math.PI) / 180;
         stackRef.current!.style.transform = `perspective(${P}px) scale(${state.scale}) rotateX(${state.rx}deg) rotateZ(${state.rz}deg)`;
-        const sceneW = scene.clientWidth;
         const anchor = stackRef.current!.parentElement!;
         const shiftPx = -state.shift * sceneW * 0.2;
         anchor.style.transform = `translate3d(${shiftPx}px, 0, 0)`;
-        // mobile: stack moves to the left third, labels take the right-hand side
-        const column = compact ? Math.max(70, sceneW * 0.26) : Math.min(sceneW / 2 - 40, 300);
+        // compact: the stack moves to the left third and the labels hold the right-hand column
+        // (compensating the slide, so they never run off the edge mid-animation);
+        // wide: labels are up to 240 px, keep the whole label inside the scene on both sides
+        const column = compact ? Math.min(Math.max(64, sceneW * 0.24), sceneW * 0.7 - 158) - sceneW * 0.2 * (1 - state.shift) : Math.max(150, Math.min(sceneW / 2 - 264, 300));
         const projected = LAYERS.map((l, i) => {
           const z = FLUSH_Z[i] + (EXPLODED_Z[i] * spread - FLUSH_Z[i]) * state.explode;
           const el = layerRefs.current[i];
@@ -213,7 +223,8 @@ export function ExplodedView() {
       };
 
       const mm = gsap.matchMedia();
-      mm.add({ desktop: "(min-width: 768px)", mobile: "(max-width: 767px)", reduce: "(prefers-reduced-motion: reduce)" }, (ctx) => {
+      // tablets use the compact layout too: alternating labels need ~1100 px to fit
+      mm.add({ desktop: "(min-width: 1024px)", mobile: "(max-width: 1023px)", reduce: "(prefers-reduced-motion: reduce)" }, (ctx) => {
         const { mobile, reduce } = ctx.conditions as { desktop: boolean; mobile: boolean; reduce: boolean };
         compact = mobile;
         spread = mobile ? 0.72 : 1;
@@ -257,6 +268,7 @@ export function ExplodedView() {
           .to(".xv-final", { opacity: 1, y: 0, duration: 0.8 }, 8.4);
         return () => ScrollTrigger.refresh();
       });
+      return () => ro.disconnect();
     },
     { scope: root },
   );
@@ -293,7 +305,7 @@ export function ExplodedView() {
                     key={k}
                     aria-hidden
                     className="absolute inset-0"
-                    style={{ borderRadius: l.radius, background: l.edge, transform: `translateZ(${-(k + 1) * 3}px)`, filter: `brightness(${1 - k * 0.12})` }}
+                    style={{ borderRadius: l.radius, background: shade(l.edge, 1 - k * 0.12), transform: `translateZ(${-(k + 1) * 3}px)` }}
                   />
                 ))}
                 <div className="absolute inset-0" style={{ borderRadius: l.radius }}>
@@ -334,13 +346,13 @@ export function ExplodedView() {
                   ref={(el) => {
                     labelRefs.current[i] = el;
                   }}
-                  className={`absolute top-0 left-0 w-max max-w-[150px] opacity-0 sm:max-w-[240px] ${i % 2 === 1 ? "md:text-right" : ""}`}
+                  className={`absolute top-0 left-0 w-max max-w-[150px] opacity-0 sm:max-w-[240px] ${i % 2 === 1 ? "lg:text-right" : ""}`}
                 >
-                  <div className={`flex items-baseline gap-2 ${i % 2 === 1 ? "md:justify-end" : ""}`}>
+                  <div className={`flex items-baseline gap-2 ${i % 2 === 1 ? "lg:justify-end" : ""}`}>
                     <span className="font-mono text-[10px] text-signal">{String(i + 1).padStart(2, "0")}</span>
                     <span className="font-display text-sm font-semibold text-paper sm:text-base">{l.label}</span>
                   </div>
-                  <p className="mt-0.5 hidden text-xs leading-5 text-asphalt-300 sm:block">{l.detail}</p>
+                  <p className="mt-0.5 hidden text-xs leading-5 text-asphalt-300 lg:block">{l.detail}</p>
                 </div>
               </li>
             ))}

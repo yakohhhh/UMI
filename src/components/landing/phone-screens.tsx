@@ -61,7 +61,7 @@ export function RideReportScreen() {
         <div className="flex items-center gap-1.5 text-[10px] text-asphalt-300">
           <Bike className="size-3 text-signal" /> Today · 07:52 · Gràcia → 22@
         </div>
-        <h4 className="mt-1 font-display text-lg font-semibold text-paper">Morning commute</h4>
+        <p className="mt-1 font-display text-lg font-semibold text-paper">Morning commute</p>
       </div>
       <div className="relative mx-4 mt-3 h-[150px] overflow-hidden rounded-2xl bg-asphalt-950">
         <svg viewBox={`${phoneMap.w * 0.05} ${phoneMap.h * 0.12} ${phoneMap.w * 0.95} ${phoneMap.h * 0.55}`} className="size-full" aria-hidden>
@@ -112,7 +112,7 @@ export const StreetMapScreen = forwardRef<HTMLDivElement, { hour: number }>(func
     <div ref={ref} className="relative flex h-full flex-col bg-asphalt-950">
       <StatusBar time="17:58" />
       <div className="mx-4 mt-2 flex items-center justify-between">
-        <h4 className="font-display text-base font-semibold text-paper">Street map</h4>
+        <p className="font-display text-base font-semibold text-paper">Street map</p>
         <span className="rounded-full bg-asphalt-800 px-2 py-0.5 text-[10px] text-asphalt-200">Overall</span>
       </div>
       <div className="relative mt-2 flex-1 overflow-hidden">
@@ -155,7 +155,7 @@ export function RoutesScreen() {
     <div className="flex h-full flex-col bg-asphalt-900">
       <StatusBar time="07:41" />
       <div className="mx-4 mt-2">
-        <h4 className="font-display text-base font-semibold text-paper">Choose a route</h4>
+        <p className="font-display text-base font-semibold text-paper">Choose a route</p>
         <p className="text-[10px] text-asphalt-300">Gràcia → 22@ · leaving now</p>
       </div>
       <div className="relative mx-4 mt-2 h-[176px] overflow-hidden rounded-2xl bg-asphalt-950">

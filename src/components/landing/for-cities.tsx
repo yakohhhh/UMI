@@ -175,7 +175,7 @@ export function ForCities() {
             <div key={f.caption} className="city-figure" data-value={f.value}>
               <dt className="sr-only">{f.caption}</dt>
               <dd>
-                <span className="font-num text-5xl font-semibold tracking-tight text-paper sm:text-6xl">
+                <span className="font-num text-5xl font-semibold tracking-tight text-paper sm:text-[clamp(2.25rem,5.5vw,3.75rem)]">
                   <span className="city-figure-value">{f.value.toLocaleString("en-US")}</span>
                   {f.suffix}
                 </span>

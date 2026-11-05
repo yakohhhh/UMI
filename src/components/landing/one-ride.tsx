@@ -141,7 +141,7 @@ export function OneRide() {
                     >
                       0
                     </span>
-                    <span className="text-xs text-asphalt-400">/100</span>
+                    <span className="text-xs text-asphalt-300">/100</span>
                   </span>
                 </div>
                 <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/8">
