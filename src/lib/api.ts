@@ -5,20 +5,25 @@
  * FastAPI deployment and the functions marked with an endpoint will call it
  * instead — response shapes are the types in ./types.
  */
+import { CITY_MIN_RIDERS, MAP_MIN_RIDERS } from "./reports";
 import type {
   ActivityDetail,
   ActivitySummary,
   AirNoiseCell,
   Athlete,
   BestWindow,
+  BrakeCause,
   BrakeHotspot,
   CityAlert,
   CityFilters,
+  CityHazard,
   CityOverview,
   ClipStatus,
   DistrictStat,
   ExposurePeriod,
   ExposureSummary,
+  FlagReport,
+  HazardKind,
   Kpi,
   MonthlyBrakes,
   PlannedRoute,
@@ -32,6 +37,7 @@ import {
   loadActivities,
   loadActivityDetail,
   loadCity,
+  loadCityHazards,
   loadCityOutline,
   loadDistrictsGeo,
   loadExposure,
@@ -46,7 +52,7 @@ import {
 } from "./mock";
 
 const MOCK_ANCHOR_MS = MOCK_ANCHOR.getTime();
-import { TIME_ZONE } from "./format";
+import { formatDay, TIME_ZONE } from "./format";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -82,6 +88,13 @@ async function endpoint<T>(path: string, fallback: () => Promise<T> | T, latency
   return (await res.json()) as T;
 }
 
+async function send<T>(method: "POST" | "PUT", path: string, body: unknown, fallback: () => Promise<T> | T): Promise<T> {
+  if (!API_URL) return mock(fallback, [120, 260]);
+  const res = await fetch(`${API_URL}${path}`, { method, headers: { accept: "application/json", "content-type": "application/json" }, body: JSON.stringify(body) });
+  if (!res.ok) throw new ApiError(`${method} ${path} failed`, res.status);
+  return (await res.json()) as T;
+}
+
 // ------------------------------------------------------------------ rider
 
 export const CURRENT_ATHLETE_ID = "laia";
@@ -96,14 +109,44 @@ export function getAthlete(id: string): Promise<Athlete | null> {
   return endpoint(`/v1/athletes/${id}`, async () => (await loadPeople()).people[id] ?? null, [40, 90]);
 }
 
+/** Answers given in this session (mock mode keeps them in memory, like a server would). */
+const answers = { causes: new Map<string, BrakeCause>(), kinds: new Map<string, HazardKind>() };
+
+function withAnswers<T extends ActivitySummary>(a: T): T {
+  return {
+    ...a,
+    events: a.events.map((e) => (answers.causes.has(e.id) ? { ...e, cause: answers.causes.get(e.id) } : e)),
+    flags: a.flags.map((f) => (answers.kinds.has(f.id) ? { ...f, kind: answers.kinds.get(f.id)! } : f)),
+  };
+}
+
 /** GET /v1/feed — the rider's own activities and the people they follow. */
 export function getFeed(): Promise<ActivitySummary[]> {
-  return endpoint("/v1/feed", async () => (isSimulatingEmpty() ? [] : loadActivities()));
+  return endpoint("/v1/feed", async () => (isSimulatingEmpty() ? [] : (await loadActivities()).map(withAnswers)));
 }
 
 /** GET /v1/activities/{id} */
 export function getActivity(id: string): Promise<ActivityDetail | null> {
-  return endpoint(`/v1/activities/${id}`, () => loadActivityDetail(id), [260, 520]);
+  return endpoint(`/v1/activities/${id}`, async () => {
+    const a = await loadActivityDetail(id);
+    return a && withAnswers(a);
+  }, [260, 520]);
+}
+
+/** POST /v1/me/activities/{id}/events/{eventId}/cause — "why did you brake?", answered after the ride. */
+export function answerBrakeCause(activityId: string, eventId: string, cause: BrakeCause): Promise<{ ok: true }> {
+  return send("POST", `/v1/me/activities/${activityId}/events/${eventId}/cause`, { cause }, () => {
+    answers.causes.set(eventId, cause);
+    return { ok: true as const };
+  });
+}
+
+/** POST /v1/me/activities/{id}/flags/{flagId} — what a flag pressed without a keyword was about. */
+export function answerFlagKind(activityId: string, flagId: string, kind: HazardKind): Promise<{ ok: true }> {
+  return send("POST", `/v1/me/activities/${activityId}/flags/${flagId}`, { kind }, () => {
+    answers.kinds.set(flagId, kind);
+    return { ok: true as const };
+  });
 }
 
 export async function getFeaturedActivityId() {
@@ -164,9 +207,11 @@ export function getClipStatus(): Promise<ClipStatus> {
       { id: "gnss", label: "GNSS", enabled: true, detail: "Multi-band GPS + Galileo, 1 Hz" },
       { id: "imu", label: "IMU · 6-axis", enabled: true, detail: "Vibration & hard brakes, 100 Hz" },
       { id: "pm", label: "PM2.5", enabled: true, detail: "Laser particle sensor, every 10 s" },
-      { id: "mic", label: "Microphone", enabled: true, detail: "dB(A) only — no audio is recorded" },
+      { id: "mic", label: "Microphone", enabled: true, detail: "dB(A) · one keyword while you hold the button, if voice keywords are on · audio never leaves the Clip" },
       { id: "env", label: "Temperature & humidity", enabled: true, detail: "Corrects the PM2.5 reading" },
     ],
+    // Laia opted in to voice keywords (off by default on a new Clip)
+    flagging: { voice: true, languages: ["Català", "Español", "English"], chirp: true, warnAhead: true },
   }));
 }
 
@@ -182,9 +227,53 @@ export function getPotholes(): Promise<Pothole[]> {
   return endpoint("/v1/potholes", () => loadPotholes());
 }
 
-/** GET /v1/hotspots/hard-brakes */
+/** GET /v1/hotspots/hard-brakes — with why riders brake there, once enough of them answered. */
 export function getBrakeHotspots(): Promise<BrakeHotspot[]> {
-  return endpoint("/v1/hotspots/hard-brakes", () => loadHotspots());
+  return endpoint("/v1/hotspots/hard-brakes", async () => (await loadHotspots()).map((h) => withCauses(h)));
+}
+
+const CAUSE_BASE: [BrakeCause, number][] = [
+  ["vehicle", 0.34],
+  ["pedestrian", 0.2],
+  ["junction", 0.14],
+  ["lane_blocked", 0.12],
+  ["car_door", 0.07],
+  ["surface", 0.06],
+  ["animal", 0.04],
+  ["roadworks", 0.03],
+];
+
+/** Verdaguer has a dog-walking promenade on Pg. de Sant Joan: the "dog" brakes are a real pattern there. */
+const KNOWN_CAUSES: Record<string, BrakeHotspot["causes"]> = {
+  "hs-1": [
+    { cause: "vehicle", share: 0.4 },
+    { cause: "pedestrian", share: 0.2 },
+    { cause: "junction", share: 0.2 },
+    { cause: "animal", share: 0.1 },
+    { cause: "other", share: 0.1 },
+  ],
+};
+
+/**
+ * Why riders brake at a hotspot ("just me" answers excluded). Shares are rounded
+ * to 10 % and causes under 10 % merged into "other", so no single answer shows;
+ * nothing is published below CITY_MIN_RIDERS different riders.
+ */
+function withCauses(h: BrakeHotspot): BrakeHotspot {
+  const answeredBy = Math.round(h.hardBrakes30d * 0.16);
+  // seeded by the hotspot's own id so a junction keeps its mix whatever the filters
+  const seed = Number(h.id.replace(/\D/g, "")) || 0;
+  if (answeredBy < CITY_MIN_RIDERS) return { ...h, answeredBy };
+  if (KNOWN_CAUSES[h.id]) return { ...h, answeredBy, causes: KNOWN_CAUSES[h.id] };
+  const raw = CAUSE_BASE.map(([cause, w], k) => ({ cause, w: w * (1 + 0.6 * Math.sin(seed * 1.7 + k * 2.3)) }));
+  const total = raw.reduce((s, c) => s + c.w, 0);
+  const tenths = raw.map((c) => ({ cause: c.cause, n: Math.round((c.w / total) * 10) })).filter((c) => c.n > 0).sort((a, b) => b.n - a.n);
+  const named = tenths.slice(0, 4);
+  const other = 10 - named.reduce((s, c) => s + c.n, 0);
+  // rounding can overshoot 10 tenths: take it off the largest cause
+  if (other < 0) named[0].n += other;
+  const causes = [...named.map((c) => ({ cause: c.cause as BrakeCause | "other", share: c.n / 10 })), ...(other > 0 ? [{ cause: "other" as const, share: other / 10 }] : [])];
+  return { ...h, answeredBy, causes };
 }
 
 /** GET /v1/districts — district boundaries (GeoJSON). */
@@ -331,8 +420,13 @@ export function getExposure(): Promise<ExposureSummary> {
 /** GET /v1/me/profile */
 export function getProfileStats(): Promise<ProfileStats> {
   return endpoint("/v1/me/profile", async () => {
-    const acts = (await loadActivities()).filter((a) => a.athleteId === CURRENT_ATHLETE_ID);
+    const acts = (await loadActivities()).filter((a) => a.athleteId === CURRENT_ATHLETE_ID).map(withAnswers);
     const best = acts.reduce((b, a) => (a.scores.comfort > b.scores.comfort ? a : b), acts[0]);
+    const flags: FlagReport[] = acts.flatMap((a) =>
+      a.flags.map((f) => ({ ...f, activityId: a.id, date: new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date(a.startedAt)) })),
+    );
+    // Older flags (before the rides in the feed) count towards the impact totals.
+    const earlier = { ridersWarned: 2140, verified: 17, fixed: 2, causesGiven: 41 };
     return {
       totals: { distanceKm: 1846, rides: 412, runs: 6, hours: 131, streetsMapped: 186, since: "2025-11-03" },
       records: [
@@ -344,7 +438,9 @@ export function getProfileStats(): Promise<ProfileStats> {
       badges: [
         { id: "cartographer", label: "Street cartographer", description: "Measured 150 different street segments", earned: true },
         { id: "calm", label: "Calm commuter", description: "20 commutes with an overall score above 70", earned: true },
-        { id: "pothole", label: "Pothole hunter", description: "Confirmed 10 potholes for the city", earned: true },
+        { id: "pothole", label: "Pothole hunter", description: "10 of your pothole flags verified by other riders", earned: true },
+        { id: "fixed", label: "Fixed it", description: "3 of your flags repaired by the city", earned: true },
+        { id: "steward", label: "Street steward", description: "Trust level 8: clear a hazard on your commute alone", earned: false, progress: 0.7 },
         { id: "early", label: "Early bird", description: "Rode before 7:30 on 15 days", earned: true },
         { id: "clean", label: "Clean air month", description: "A month under 10 µg/m³ average", earned: false, progress: 0.62 },
         { id: "century", label: "2,000 km", description: "Ride 2,000 km with UMI", earned: false, progress: 0.92 },
@@ -359,6 +455,19 @@ export function getProfileStats(): Promise<ProfileStats> {
           { name: "Carrer del Consell de Cent", passes: 77 },
           { name: "Carrer de la Llacuna", passes: 64 },
         ],
+        impact: {
+          ridersWarned: earlier.ridersWarned + flags.reduce((s, f) => s + f.ridersWarned, 0),
+          verified: earlier.verified + flags.filter((f) => f.status !== "pending" && f.status !== "expired").length,
+          fixed: earlier.fixed + flags.filter((f) => f.status === "fixed").length,
+          causesGiven: earlier.causesGiven + acts.reduce((s, a) => s + a.events.filter((e) => e.cause).length, 0),
+        },
+        trust: {
+          level: 7,
+          max: 10,
+          next: "3 more verified flags to reach Street steward",
+          perks: ["Passing Clips re-check your flags first, so they're verified sooner", "Early access to new keyword languages"],
+        },
+        flags: flags.sort((x, y) => (x.date < y.date ? 1 : -1)),
       },
       clubs: [
         { id: "gracia", name: "Gràcia Riders", challenge: "October distance", progress: 1240, goal: 2000, unit: "km", members: 86 },
@@ -395,7 +504,7 @@ function shiftedGeneratedAt(iso: string) {
 }
 
 /** What changed: the few signals a mobility team should look at first. */
-function cityAlerts(airNoise: AirNoiseCell[][], hotspots: BrakeHotspot[], ranking: SurfaceRankRow[]): CityAlert[] {
+function cityAlerts(airNoise: AirNoiseCell[][], hotspots: BrakeHotspot[], ranking: SurfaceRankRow[], hazards: CityHazard[]): CityAlert[] {
   const rising = [...hotspots].sort((a, b) => b.trend - a.trend)[0];
   const easing = [...hotspots].filter((h) => h.hardBrakesWeek >= 15).sort((a, b) => a.trend - b.trend)[0];
   const rough = [...ranking].filter((r) => r.surfaceIndex < 35).sort((a, b) => b.riders30d - a.riders30d)[0];
@@ -426,6 +535,15 @@ function cityAlerts(airNoise: AirNoiseCell[][], hotspots: BrakeHotspot[], rankin
     body: `${peak.v.toFixed(1)} µg/m³ on measured streets, ${(peak.v / 10 - 1) * 100 > 0 ? `${Math.round((peak.v / 10 - 1) * 100)}% above` : "within"} the EU 2030 limit.`,
     href: "/city/air-noise",
   });
+  const flagged = [...hazards].filter((h) => h.status === "new").sort((a, b) => b.riders - a.riders)[0];
+  if (flagged)
+    alerts.push({
+      id: "flagged",
+      tone: "bad",
+      title: `Riders flag ${HAZARD_NOUN[flagged.kind]} on ${flagged.street}`,
+      body: `${flagged.riders} different riders flagged or confirmed it from their Clip since ${formatDay(flagged.firstSeen, { day: "numeric", month: "short" })}. Not yet in IRIS.`,
+      href: "/city/safety#hazards",
+    });
   if (easing && easing.trend < 0)
     alerts.push({
       id: "easing",
@@ -440,7 +558,7 @@ function cityAlerts(airNoise: AirNoiseCell[][], hotspots: BrakeHotspot[], rankin
 /** GET /v1/city/overview?period=&districts=&mode= — KPIs aggregated over the selected districts. */
 export function getCityOverview(f: CityFilters): Promise<CityOverview> {
   return endpoint(`/v1/city/overview?period=${f.period}&mode=${f.mode}`, async () => {
-    const [c, hotspots, ranking, districtOf] = await Promise.all([loadCity(), loadHotspots(), loadSurfaceRanking(), hotspotDistricts()]);
+    const [c, hotspots, ranking, districtOf, hazards] = await Promise.all([loadCity(), loadHotspots(), loadSurfaceRanking(), hotspotDistricts(), loadCityHazards()]);
     if (isSimulatingEmpty()) return { kpis: [], districts: [], alerts: [], generatedAt: shiftedGeneratedAt(c.generatedAt) };
     const active = hotspots.filter((h) => h.hardBrakesWeek >= ACTIVE_HOTSPOT_PER_WEEK);
     const districts: DistrictStat[] = c.districts.map((d) => ({
@@ -469,7 +587,7 @@ export function getCityOverview(f: CityFilters): Promise<CityOverview> {
       });
     }
     // Every district is returned (maps need the whole city); the UI highlights the selection.
-    return { kpis, districts, alerts: cityAlerts(c.airNoise, hotspots, ranking), generatedAt: shiftedGeneratedAt(c.generatedAt) };
+    return { kpis, districts, alerts: cityAlerts(c.airNoise, hotspots, ranking, filterDistricts(hazards, f)), generatedAt: shiftedGeneratedAt(c.generatedAt) };
   });
 }
 
@@ -566,7 +684,7 @@ export function getCitySafety(f: CityFilters): Promise<SafetyData> {
     const factor = (PERIOD_FACTOR[f.period] / 4.3) * modeBrakes;
     const list = hotspots
       .filter((h) => !f.districts.length || f.districts.includes(districtOf.get(h.id) ?? ""))
-      .map((h) => ({ ...h, hardBrakes30d: Math.max(1, Math.round(h.hardBrakes30d * factor)), hardBrakesWeek: Math.max(run ? 0 : 1, Math.round(h.hardBrakesWeek * modeBrakes)) }));
+      .map((h) => withCauses({ ...h, hardBrakes30d: Math.max(1, Math.round(h.hardBrakes30d * factor)), hardBrakesWeek: Math.max(run ? 0 : 1, Math.round(h.hardBrakesWeek * modeBrakes)) }));
     const atHotspots = list.reduce((s, h) => s + h.hardBrakes30d, 0);
     const total = Math.max(Math.round(now.brakes), atHotspots);
     return {
@@ -580,6 +698,34 @@ export function getCitySafety(f: CityFilters): Promise<SafetyData> {
         atHotspotsPct: total ? Math.round((atHotspots / total) * 100) : 0,
       },
     };
+  });
+}
+
+/** GET /v1/hazards — live flags on every rider's street map: 3+ different riders, not yet fixed or gone. */
+export function getLiveHazards(): Promise<CityHazard[]> {
+  return endpoint("/v1/hazards", async () => {
+    if (isSimulatingEmpty()) return [];
+    const [city, acts] = await Promise.all([loadCityHazards(), loadActivities()]);
+    // verified flags that have not reached the city threshold yet (e.g. this morning's roadworks on Diagonal)
+    const verified: CityHazard[] = acts
+      .flatMap((a) => a.flags.filter((fl) => fl.status === "verified" && fl.kind).map((fl) => ({ fl, day: new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date(a.startedAt)) })))
+      .map(({ fl, day }) => ({ id: fl.id, kind: fl.kind!, street: fl.street ?? "Unnamed street", district: "", coordinates: fl.coordinates, riders: fl.confirmations + 1, firstSeen: day, lastConfirmed: day, status: "new" as const }));
+    return [...city.filter((h) => h.status !== "fixed"), ...verified].filter((h) => h.riders >= MAP_MIN_RIDERS);
+  });
+}
+
+const HAZARD_NOUN: Record<HazardKind, string> = { roadworks: "roadworks", pothole: "a pothole", blocked_lane: "a blocked bike lane", obstacle: "an obstacle", danger: "a dangerous spot" };
+
+/** GET /v1/city/hazards?period=&districts= — rider flags published from CITY_MIN_RIDERS different riders, day-level dates, no reporters. */
+export function getCityHazards(f: CityFilters): Promise<CityHazard[]> {
+  return endpoint(`/v1/city/hazards?period=${f.period}`, async () => {
+    if (isSimulatingEmpty()) return [];
+    const days = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[f.period];
+    const since = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date(mockNow().getTime() - days * 86_400_000));
+    const rows = (await loadCityHazards()).filter((h) => h.riders >= CITY_MIN_RIDERS && h.lastConfirmed >= since);
+    // runners flag far less from a belt clip: scale first, then apply the 5-rider rule again
+    const scaled = f.mode === "run" ? rows.map((h) => ({ ...h, riders: Math.round(h.riders * 0.2) })).filter((h) => h.riders >= CITY_MIN_RIDERS) : rows;
+    return filterDistricts(scaled, f).sort((a, b) => b.riders - a.riders);
   });
 }
 
@@ -626,7 +772,8 @@ export function getApiUsage(): Promise<ApiUsage> {
       endpoints: [
         { method: "GET", path: "/v1/city/segments", description: "Scored street segments (GeoJSON), filterable by bbox, hour and mode" },
         { method: "GET", path: "/v1/city/surface/ranking", description: "Segments ranked by surface index, with confirmed impacts" },
-        { method: "GET", path: "/v1/city/safety/hotspots", description: "Hard-brake clusters (> 3 m/s²) with counts and peak hours" },
+        { method: "GET", path: "/v1/city/safety/hotspots", description: "Hard-brake clusters (> 3 m/s²) with counts, peak hours and why riders brake (5+ riders)" },
+        { method: "GET", path: "/v1/city/hazards", description: "Hazards flagged from riders' Clips (roadworks, blocked lanes, potholes), 5+ riders, day-level" },
         { method: "GET", path: "/v1/city/air-noise", description: "PM2.5 and dB(A) by hour × weekday" },
         { method: "GET", path: "/v1/city/districts", description: "District aggregates and boundaries" },
       ],

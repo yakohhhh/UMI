@@ -1,11 +1,11 @@
 "use client";
 
 import { ArrowDown, ArrowRight, AudioLines, ShieldAlert, Waves, Wind } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { ClipDevice } from "./clip-device";
 import { rideMap } from "./data/geo";
-import { gsap, SplitText, useGSAP } from "./motion";
+import { gsap, useGSAP } from "./motion";
 
 const CHIPS = [
   { icon: Wind, label: "PM2.5", value: "12 µg/m³", pos: "left-[6%] top-[14%]", delay: "0s" },
@@ -14,29 +14,72 @@ const CHIPS = [
   { icon: AudioLines, label: "Noise", value: "61 dB", pos: "right-[1%] top-[44%]", delay: "-1s" },
 ];
 
-/** Abstract Eixample grid (real Barcelona geometry) with a looping ride trace. */
+/** The last two words stay together so "it." is never alone on a line. */
+const TITLE = ["Know", "the", "street", "before", "you", "take\u00a0it."];
+/** Stagger index for the CSS intro (see .hero-word / .hero-fade in globals.css). */
+const order = (i: number) => ({ "--i": i }) as CSSProperties;
+
+const TRACE_CHUNKS = 12;
+/** The trace draws during the first 62 % of its 7.5 s loop, then fades (see globals.css). */
+const TRACE_DRAW = 0.62;
+
+/** Time at which cubic-bezier(0.65, 0, 0.35, 1) (--ease-in-out-cubic) reaches progress p. */
+function easeInOutCubicTime(p: number) {
+  const bezier = (a: number, b: number, s: number) => 3 * (1 - s) ** 2 * s * a + 3 * (1 - s) * s * s * b + s ** 3;
+  let lo = 0;
+  let hi = 1;
+  for (let k = 0; k < 24; k++) {
+    const s = (lo + hi) / 2;
+    if (bezier(0, 1, s) < p) lo = s;
+    else hi = s;
+  }
+  return bezier(0.65, 0.35, (lo + hi) / 2);
+}
+
+/**
+ * Splits the route polyline into equal-length chunks, each with its own
+ * keyframes so the chunks draw one after another with the original easing.
+ * Only the chunk being drawn repaints, instead of the whole route every frame.
+ */
+const trace = (() => {
+  const pts = rideMap.route.slice(1).split("L").map((p) => p.trim().split(/\s+/).map(Number) as [number, number]);
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const total = cum[cum.length - 1];
+  const at = (len: number) => {
+    let i = 1;
+    while (i < pts.length - 1 && cum[i] < len) i++;
+    const t = (len - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
+    return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t].map((v) => v.toFixed(1)).join(" ");
+  };
+  const chunks = Array.from({ length: TRACE_CHUNKS }, (_, c) => {
+    const from = (total * c) / TRACE_CHUNKS;
+    const to = (total * (c + 1)) / TRACE_CHUNKS;
+    const inner = pts.filter((_, i) => cum[i] > from && cum[i] < to).map(([x, y]) => `${x} ${y}`);
+    return `M${[at(from), ...inner, at(to)].join("L")}`;
+  });
+  const pct = (p: number) => `${(easeInOutCubicTime(p) * TRACE_DRAW * 100).toFixed(2)}%`;
+  const css = chunks
+    .map((_, c) => `@keyframes umi-trace-${c}{0%,${pct(c / TRACE_CHUNKS)}{stroke-dashoffset:1}${pct((c + 1) / TRACE_CHUNKS)},100%{stroke-dashoffset:0}}`)
+    .join("");
+  return { chunks, css };
+})();
+
+/**
+ * Abstract Eixample grid (real Barcelona geometry) with a looping ride trace.
+ * The static streets and the animated trace are two layers under one CSS mask,
+ * so only the trace repaints while it draws; the grid is rasterised once.
+ */
 function StreetGridBackdrop() {
+  const viewBox = `0 0 ${rideMap.width} ${rideMap.height}`;
   return (
-    <svg
-      viewBox={`0 0 ${rideMap.width} ${rideMap.height}`}
-      preserveAspectRatio="xMidYMid slice"
-      className="absolute inset-0 size-full"
-      aria-hidden
-    >
-      <defs>
-        <radialGradient id="hero-fade" cx="0.5" cy="0.45" r="0.62">
-          <stop offset="0" stopColor="#fff" stopOpacity="1" />
-          <stop offset="0.7" stopColor="#fff" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-        <mask id="hero-mask">
-          <rect width="100%" height="100%" fill="url(#hero-fade)" />
-        </mask>
-        <clipPath id="hero-city">
-          <path d={rideMap.city} />
-        </clipPath>
-      </defs>
-      <g mask="url(#hero-mask)">
+    <div className="absolute inset-0 [mask-image:radial-gradient(62%_62%_at_50%_45%,#000,rgb(0_0_0/0.35)_70%,transparent)]">
+      <svg viewBox={viewBox} preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" aria-hidden>
+        <defs>
+          <clipPath id="hero-city">
+            <path d={rideMap.city} />
+          </clipPath>
+        </defs>
         <g clipPath="url(#hero-city)" stroke="#8794ab" strokeOpacity="0.16" strokeWidth="0.8">
           {rideMap.grid.map((d, i) => (
             <path key={i} d={d} fill="none" />
@@ -46,18 +89,16 @@ function StreetGridBackdrop() {
         <path d={rideMap.diagonal} fill="none" stroke="#b6c0d0" strokeOpacity="0.28" strokeWidth="2.4" clipPath="url(#hero-city)" />
         <path d={rideMap.granVia} fill="none" stroke="#b6c0d0" strokeOpacity="0.2" strokeWidth="2" clipPath="url(#hero-city)" />
         <path d={rideMap.route} fill="none" stroke="#ff5b1f" strokeOpacity="0.18" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-        <path
-          d={rideMap.route}
-          pathLength={1}
-          fill="none"
-          stroke="#ff5b1f"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="hero-trace"
-        />
-      </g>
-    </svg>
+      </svg>
+      <svg viewBox={viewBox} preserveAspectRatio="xMidYMid slice" className="hero-trace-fade absolute inset-0 size-full will-change-transform" aria-hidden>
+        <style>{trace.css}</style>
+        <g fill="none" stroke="#ff5b1f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          {trace.chunks.map((d, i) => (
+            <path key={i} d={d} pathLength={1} className="hero-trace" style={{ animationName: `umi-trace-${i}` }} />
+          ))}
+        </g>
+      </svg>
+    </div>
   );
 }
 
@@ -68,18 +109,11 @@ export function Hero() {
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-      mm.add({ motion: "(prefers-reduced-motion: no-preference)", reduce: "(prefers-reduced-motion: reduce)" }, (ctx) => {
-        const { motion } = ctx.conditions as { motion: boolean };
-        const split = SplitText.create(".hero-title", { type: "words", mask: "words", wordsClass: "will-change-transform" });
-        if (!motion) {
-          gsap.from([".hero-title", ".hero-fade"], { opacity: 0, duration: 0.6, stagger: 0.08 });
-          return () => split.revert();
-        }
-        const tl = gsap.timeline({ delay: 0.15 });
-        tl.from(split.words, { yPercent: 110, opacity: 0, duration: 1.1, stagger: 0.075 })
-          .from(".hero-fade", { y: 24, opacity: 0, duration: 0.9, stagger: 0.08 }, "-=0.7")
-          .from(".hero-device", { y: 80, opacity: 0, scale: 0.94, duration: 1.4 }, "-=1.1")
-          .from(".hero-chip", { opacity: 0, scale: 0.9, duration: 0.8, stagger: 0.12 }, "-=0.8");
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        // The title and copy animate in with CSS from the first paint (they are the page's LCP);
+        // only the device and the chips wait for JS.
+        const tl = gsap.timeline({ delay: 0.35 });
+        tl.from(".hero-device", { y: 80, opacity: 0, scale: 0.94, duration: 1.4 }).from(".hero-chip", { opacity: 0, scale: 0.9, duration: 0.8, stagger: 0.12 }, "-=0.8");
 
         // Leaving the hero: content drifts up and fades, the device sinks slightly.
         gsap.to([".hero-copy", ".hero-scroll"], {
@@ -94,35 +128,35 @@ export function Hero() {
           ease: "none",
           scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
         });
-        return () => split.revert();
       });
     },
     { scope: root },
   );
 
-  // Pointer parallax on the device (transform only, eased in rAF).
+  // Pointer parallax on the device (transform only, eased in rAF). The loop
+  // stops once the device has caught up with the pointer, so a resting pointer
+  // costs nothing; pointer position is read against the viewport (no layout read).
   useEffect(() => {
     const el = tiltRef.current;
     const section = root.current;
-    if (!el || !section || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || !section || !window.matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) return;
     let tx = 0;
     let ty = 0;
     let x = 0;
     let y = 0;
     let raf = 0;
-    const onMove = (e: PointerEvent) => {
-      const r = section.getBoundingClientRect();
-      tx = (e.clientX - r.left) / r.width - 0.5;
-      ty = (e.clientY - r.top) / r.height - 0.5;
-    };
     const loop = () => {
       x += (tx - x) * 0.06;
       y += (ty - y) * 0.06;
       el.style.transform = `rotateX(${10 - y * 14}deg) rotateY(${-26 + x * 22}deg)`;
-      raf = requestAnimationFrame(loop);
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.001 ? requestAnimationFrame(loop) : 0;
+    };
+    const onMove = (e: PointerEvent) => {
+      tx = e.clientX / window.innerWidth - 0.5;
+      ty = e.clientY / window.innerHeight - 0.5;
+      if (!raf) raf = requestAnimationFrame(loop);
     };
     section.addEventListener("pointermove", onMove);
-    raf = requestAnimationFrame(loop);
     return () => {
       section.removeEventListener("pointermove", onMove);
       cancelAnimationFrame(raf);
@@ -138,16 +172,23 @@ export function Hero() {
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-asphalt-900" />
       <div aria-hidden className="pointer-events-none absolute bottom-[8%] left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-signal/20 blur-[100px]" />
       <div className="hero-copy relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-5 pt-28 text-center sm:pt-32">
-        <p className="hero-fade label-mono inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-asphalt-200">
+        <p style={order(0)} className="hero-fade label-mono inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-asphalt-200">
           <span className="size-1.5 rounded-full bg-signal" /> Urban Motion Intelligence · Barcelona
         </p>
         <h1 className="hero-title mt-6 max-w-5xl font-display text-[42px] leading-[1.02] font-semibold tracking-[-0.035em] text-balance text-paper sm:text-7xl lg:text-[84px]">
-          Know the street before you take&nbsp;it.
+          {TITLE.map((word, i) => (
+            <span key={word}>
+              <span style={order(i)} className="hero-word inline-block">
+                {word}
+              </span>
+              {i < TITLE.length - 1 ? " " : null}
+            </span>
+          ))}
         </h1>
-        <p className="hero-fade mt-6 max-w-xl text-base leading-7 text-asphalt-200 sm:text-lg">
+        <p className="hero-lead mt-6 max-w-xl text-base leading-7 text-asphalt-200 sm:text-lg">
           A matchbox-sized sensor that clips on your bike, scooter or running belt and measures every street you take: comfort, safety, air and noise.
         </p>
-        <div className="hero-fade mt-8 flex flex-col items-center gap-3 sm:flex-row">
+        <div style={order(2)} className="hero-fade mt-8 flex flex-col items-center gap-3 sm:flex-row">
           <Button asChild size="xl" pill>
             <a href="#preorder">
               Pre-order — €99 <ArrowRight />
@@ -157,7 +198,7 @@ export function Hero() {
             <a href="#how-it-works">See how it works</a>
           </Button>
         </div>
-        <p className="hero-fade mt-4 text-xs text-asphalt-300">Early-bird price for the first 600 riders · €119 after · Ships spring 2027</p>
+        <p style={order(3)} className="hero-fade mt-4 text-xs text-asphalt-300">Early-bird price for the first 600 riders · €119 after · Ships spring 2027</p>
       </div>
 
       <div className="hero-device-wrap relative z-0 mx-auto mt-4 flex w-full max-w-4xl flex-1 items-start justify-center pb-24">
@@ -173,7 +214,7 @@ export function Hero() {
           {CHIPS.map((c) => (
             <div key={c.label} className={`hero-chip absolute ${c.pos}`}>
               <div className="animate-float" style={{ animationDelay: c.delay, animationDuration: "7s" }}>
-                <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-asphalt-800/70 px-3 py-2 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.9)] backdrop-blur-md">
+                <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-asphalt-800/90 px-3 py-2 shadow-[0_18px_40px_-20px_rgb(0_0_0/0.9)]">
                   <c.icon className="size-4 text-signal" />
                   <span className="label-mono text-asphalt-300">{c.label}</span>
                   <span className="font-num text-sm font-semibold text-paper">{c.value}</span>
@@ -186,6 +227,7 @@ export function Hero() {
 
       <a
         href="#product"
+        style={order(4)}
         className="hero-fade hero-scroll absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-asphalt-300 transition-colors hover:text-paper sm:flex"
         aria-label="Scroll to the product"
       >

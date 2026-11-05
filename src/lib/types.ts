@@ -45,7 +45,17 @@ export interface StreetSegment {
 export type ActivityType = "ride" | "run";
 export type RideEventType = "hard_brake" | "pothole" | "pm_spike" | "noise_peak";
 
+/**
+ * Why the rider braked, picked with one tap after the ride (never while moving).
+ * A cause never deletes the brake: it decides where the event counts (see CAUSE_BUCKET).
+ */
+export type BrakeCause = "pedestrian" | "animal" | "vehicle" | "car_door" | "lane_blocked" | "surface" | "roadworks" | "junction" | "just_me";
+/** infrastructure → the city's maintenance queue · behaviour → the junction's safety score · personal → left out of street data */
+export type CauseBucket = "infrastructure" | "behaviour" | "personal";
+
 export interface RideEvent {
+  /** Stable id, `${activityId}-e${index}`. */
+  id: string;
   type: RideEventType;
   sampleIndex: number;
   coordinates: LngLat;
@@ -53,6 +63,39 @@ export interface RideEvent {
   value: number;
   time: string; // HH:mm, Europe/Madrid
   street: string | null;
+  /** Hard brakes: the rider's answer, null while unanswered (then it counts at half weight). */
+  cause?: BrakeCause | null;
+  /** Hard brakes: one of the (at most 2) moments the app asks about after this ride. */
+  ask?: boolean;
+}
+
+/** What a flag is about: the keyword said on the Clip, or picked after the ride. */
+export type HazardKind = "roadworks" | "pothole" | "blocked_lane" | "obstacle" | "danger";
+/** press = short press on the Clip button · voice = hold, then one keyword recognised on the Clip (no audio kept). */
+export type FlagSource = "press" | "voice";
+/**
+ * pending → only you so far · verified → 3+ riders, on everyone's map · sent_to_city → 5+ riders, in City Insights ·
+ * fixed → the Clips measured the repair · expired → riders passed and it was gone.
+ */
+export type FlagStatus = "pending" | "verified" | "sent_to_city" | "fixed" | "expired";
+
+/** A hazard flagged during the ride from the Clip itself: the press fixes where and when, the keyword (or a tap later) says what. */
+export interface RideFlag {
+  id: string;
+  sampleIndex: number;
+  coordinates: LngLat;
+  time: string; // HH:mm, Europe/Madrid
+  street: string | null;
+  /** null = pressed without a keyword; the rider says what it was after the ride. */
+  kind: HazardKind | null;
+  source: FlagSource;
+  status: FlagStatus;
+  /** Other riders whose Clips confirmed it, with a press or the same sensor signature. */
+  confirmations: number;
+  /** Riders whose route or map showed the hazard while it was live. */
+  ridersWarned: number;
+  /** What the sensors saw after a fix or expiry, e.g. "Comfort 52 → 81 since the repair". */
+  proof?: string;
 }
 
 export interface ActivitySummary {
@@ -72,6 +115,7 @@ export interface ActivitySummary {
   elevationGainM: number;
   scores: Scores;
   events: RideEvent[];
+  flags: RideFlag[];
   /** Simplified trace for thumbnails. */
   preview: LngLat[];
   kudos: number;
@@ -138,6 +182,16 @@ export interface ClipStatus {
   firmware: string;
   connected: boolean;
   sensors: { id: string; label: string; enabled: boolean; detail: string }[];
+  /** The flag button: press = flag, hold = say one keyword, double press = undo. */
+  flagging: {
+    /** Hold-to-speak keywords, recognised on the Clip; off by default. */
+    voice: boolean;
+    languages: string[];
+    /** Chirp + LED to confirm a flag (no phone, no earphones). */
+    chirp: boolean;
+    /** Two low chirps when the ride approaches a verified hazard. */
+    warnAhead: boolean;
+  };
 }
 
 export interface PlannedRoute {
@@ -171,6 +225,23 @@ export interface BrakeHotspot {
   peakHour: number;
   trend: number;
   avgDecel: number;
+  /** Why riders brake here (shares, sum 1), only once 5+ different riders answered; small causes merged. */
+  causes?: { cause: BrakeCause | "other"; share: number }[];
+  /** Different riders who answered "why did you brake?" here (30 days). */
+  answeredBy?: number;
+}
+
+/** A hazard flagged by riders, published to City Insights once 5+ different riders flagged or confirmed it. */
+export interface CityHazard {
+  id: string;
+  kind: HazardKind;
+  street: string;
+  district: string;
+  coordinates: LngLat;
+  riders: number;
+  firstSeen: string; // YYYY-MM-DD, day-level only
+  lastConfirmed: string; // YYYY-MM-DD
+  status: "new" | "sent_to_iris" | "scheduled" | "fixed";
 }
 
 export interface ExposureDay {
@@ -200,11 +271,26 @@ export interface ExposureSummary {
   contributors: { street: string; share: number; pm25: number; minutesWeek: number }[];
 }
 
+export interface FlagReport extends RideFlag {
+  activityId: string;
+  date: string; // YYYY-MM-DD
+}
+
 export interface ProfileStats {
   totals: { distanceKm: number; rides: number; runs: number; hours: number; streetsMapped: number; since: string };
   records: { id: string; label: string; value: string; detail: string; date: string }[];
   badges: { id: string; label: string; description: string; earned: boolean; progress?: number }[];
-  contributions: { streetsImproved: number; potholesConfirmed: number; segmentsFirst: number; topStreets: { name: string; passes: number }[] };
+  contributions: {
+    streetsImproved: number;
+    potholesConfirmed: number;
+    segmentsFirst: number;
+    topStreets: { name: string; passes: number }[];
+    /** Outcomes of the rider's flags and answers. Credit follows what happened, never the press itself. */
+    impact: { ridersWarned: number; verified: number; fixed: number; causesGiven: number };
+    /** Private reliability (no leaderboard): rises with flags other riders verify and checks the sensors agree with. */
+    trust: { level: number; max: number; next: string; perks: string[] };
+    flags: FlagReport[];
+  };
   clubs: { id: string; name: string; challenge: string; progress: number; goal: number; unit: string; members: number }[];
 }
 

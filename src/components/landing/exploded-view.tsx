@@ -128,17 +128,20 @@ const Battery = () => (
 );
 
 const LAYERS: Layer[] = [
-  { id: "housing", label: "Housing", detail: "Recycled aluminium & polycarbonate · IP54", w: CLIP.w, h: CLIP.h, thick: 10, edge: "#0b111c", radius: CLIP.radius, art: <ClipFace /> },
+  { id: "housing", label: "Housing", detail: "Recycled aluminium & polycarbonate · IP54 · sealed flag button", w: CLIP.w, h: CLIP.h, thick: 10, edge: "#0b111c", radius: CLIP.radius, art: <ClipFace /> },
   { id: "pcb", label: "ESP32-S3 board", detail: "Edge AI scores the ride on the Clip itself", w: 150, h: 226, thick: 4, edge: "#6b5a2c", radius: 30, art: <Pcb /> },
   { id: "gnss", label: "GNSS", detail: "Multi-band GPS + Galileo, street-level fixes", w: 84, h: 84, dy: 58, thick: 6, edge: "#5c5240", radius: 14, art: <Gnss /> },
   { id: "imu", label: "IMU · 6-axis", detail: "Vibration and hard brakes, 100 times a second", w: 60, h: 60, dy: 70, thick: 4, edge: "#0d141f", radius: 12, art: <Imu /> },
   { id: "pm", label: "PM2.5 sensor", detail: "Laser scattering, a reading every 10 s", w: 128, h: 92, dy: 64, thick: 14, edge: "#5d6677", radius: 12, art: <Pm /> },
-  { id: "mic", label: "MEMS microphone", detail: "Sound level in dB(A) — never records audio", w: 52, h: 52, dy: 84, thick: 4, edge: "#0d141f", radius: 12, art: <Mic /> },
+  { id: "mic", label: "MEMS microphone", detail: "Sound level in dB(A) · one word while you hold the button, if you turn it on · audio never leaves the Clip", w: 52, h: 52, dy: 84, thick: 4, edge: "#0d141f", radius: 12, art: <Mic /> },
   { id: "battery", label: "Battery", detail: "900 mAh LiPo · a week of commutes", w: 146, h: 208, thick: 10, edge: "#69717f", radius: 26, art: <Battery /> },
 ];
 
 const FLUSH_Z = [27, 18, 14, 12, 4, -6, -16];
 const EXPLODED_Z = [318, 214, 118, 30, -64, -160, -270];
+
+/** Same as CSS brightness(k) on a #rrggbb colour, baked in: filters on 3D layers are costly. */
+const shade = (hex: string, k: number) => `rgb(${[1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * k)).join(" ")})`;
 
 export function ExplodedView() {
   const root = useRef<HTMLElement>(null);
@@ -155,18 +158,25 @@ export function ExplodedView() {
       const state = { rx: 0, rz: 0, scale: 1, explode: 0, shift: 0, labels: LAYERS.map(() => 0) };
       let compact = false;
       let spread = 1;
+      // cached: reading clientWidth inside apply() forced a layout on every scrubbed frame
+      let sceneW = scene.clientWidth;
+      const ro = new ResizeObserver(([entry]) => {
+        sceneW = entry.contentRect.width;
+      });
+      ro.observe(scene);
 
       const apply = () => {
         const P = 1800;
         const rx = (state.rx * Math.PI) / 180;
         const rz = (state.rz * Math.PI) / 180;
         stackRef.current!.style.transform = `perspective(${P}px) scale(${state.scale}) rotateX(${state.rx}deg) rotateZ(${state.rz}deg)`;
-        const sceneW = scene.clientWidth;
         const anchor = stackRef.current!.parentElement!;
         const shiftPx = -state.shift * sceneW * 0.2;
         anchor.style.transform = `translate3d(${shiftPx}px, 0, 0)`;
-        // mobile: stack moves to the left third, labels take the right-hand side
-        const column = compact ? Math.max(70, sceneW * 0.26) : Math.min(sceneW / 2 - 40, 300);
+        // compact: the stack moves to the left third and the labels hold the right-hand column
+        // (compensating the slide, so they never run off the edge mid-animation);
+        // wide: labels are up to 240 px, keep the whole label inside the scene on both sides
+        const column = compact ? Math.min(Math.max(64, sceneW * 0.24), sceneW * 0.7 - 158) - sceneW * 0.2 * (1 - state.shift) : Math.max(150, Math.min(sceneW / 2 - 264, 300));
         const projected = LAYERS.map((l, i) => {
           const z = FLUSH_Z[i] + (EXPLODED_Z[i] * spread - FLUSH_Z[i]) * state.explode;
           const el = layerRefs.current[i];
@@ -213,7 +223,8 @@ export function ExplodedView() {
       };
 
       const mm = gsap.matchMedia();
-      mm.add({ desktop: "(min-width: 768px)", mobile: "(max-width: 767px)", reduce: "(prefers-reduced-motion: reduce)" }, (ctx) => {
+      // tablets use the compact layout too: alternating labels need ~1100 px to fit
+      mm.add({ desktop: "(min-width: 1024px)", mobile: "(max-width: 1023px)", reduce: "(prefers-reduced-motion: reduce)" }, (ctx) => {
         const { mobile, reduce } = ctx.conditions as { desktop: boolean; mobile: boolean; reduce: boolean };
         compact = mobile;
         spread = mobile ? 0.72 : 1;
@@ -257,6 +268,7 @@ export function ExplodedView() {
           .to(".xv-final", { opacity: 1, y: 0, duration: 0.8 }, 8.4);
         return () => ScrollTrigger.refresh();
       });
+      return () => ro.disconnect();
     },
     { scope: root },
   );
@@ -293,7 +305,7 @@ export function ExplodedView() {
                     key={k}
                     aria-hidden
                     className="absolute inset-0"
-                    style={{ borderRadius: l.radius, background: l.edge, transform: `translateZ(${-(k + 1) * 3}px)`, filter: `brightness(${1 - k * 0.12})` }}
+                    style={{ borderRadius: l.radius, background: shade(l.edge, 1 - k * 0.12), transform: `translateZ(${-(k + 1) * 3}px)` }}
                   />
                 ))}
                 <div className="absolute inset-0" style={{ borderRadius: l.radius }}>
@@ -334,13 +346,13 @@ export function ExplodedView() {
                   ref={(el) => {
                     labelRefs.current[i] = el;
                   }}
-                  className={`absolute top-0 left-0 w-max max-w-[150px] opacity-0 sm:max-w-[240px] ${i % 2 === 1 ? "md:text-right" : ""}`}
+                  className={`absolute top-0 left-0 w-max max-w-[150px] opacity-0 sm:max-w-[240px] ${i % 2 === 1 ? "lg:text-right" : ""}`}
                 >
-                  <div className={`flex items-baseline gap-2 ${i % 2 === 1 ? "md:justify-end" : ""}`}>
+                  <div className={`flex items-baseline gap-2 ${i % 2 === 1 ? "lg:justify-end" : ""}`}>
                     <span className="font-mono text-[10px] text-signal">{String(i + 1).padStart(2, "0")}</span>
                     <span className="font-display text-sm font-semibold text-paper sm:text-base">{l.label}</span>
                   </div>
-                  <p className="mt-0.5 hidden text-xs leading-5 text-asphalt-300 sm:block">{l.detail}</p>
+                  <p className="mt-0.5 hidden text-xs leading-5 text-asphalt-300 lg:block">{l.detail}</p>
                 </div>
               </li>
             ))}

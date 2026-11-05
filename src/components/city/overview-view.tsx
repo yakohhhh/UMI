@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, CircleAlert, CircleCheck, TriangleAlert, type LucideIcon } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CircleAlert, CircleCheck, Flag, TriangleAlert, type LucideIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -27,6 +27,12 @@ const ALERT_ICON: Record<CityAlert["tone"], { icon: LucideIcon; className: strin
   mid: { icon: CircleAlert, className: "bg-mid-fill/20 text-mid" },
   good: { icon: CircleCheck, className: "bg-good-fill/15 text-good" },
 };
+
+/** Signals with their own icon, so rider flags don't look like another "rising" warning. */
+const ALERT_ID_ICON: Partial<Record<string, LucideIcon>> = { flagged: Flag };
+
+/** Columns at desktop width by number of signals, so none sits alone on a row. */
+const ALERT_COLS: Partial<Record<number, string>> = { 3: "xl:grid-cols-3", 5: "lg:grid-cols-3 xl:grid-cols-5" };
 
 export function OverviewView() {
   const { filters, toggleDistrict } = useCityFilters();
@@ -57,9 +63,10 @@ export function OverviewView() {
       </PageHeader>
 
       {!data ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5" aria-busy="true" aria-label="Loading key figures">
+        // same layout as the loaded tiles (a one-row scroller on phones), so nothing jumps when they arrive
+        <div className="-mx-4 flex gap-3 overflow-hidden px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:px-0 md:grid-cols-3 xl:grid-cols-5" aria-busy="true" aria-label="Loading key figures">
           {[0, 1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-40 rounded-2xl" />
+            <Skeleton key={i} className="h-[169px] w-[78%] shrink-0 rounded-2xl sm:w-auto" />
           ))}
         </div>
       ) : data.kpis.length === 0 ? (
@@ -150,7 +157,7 @@ export function OverviewView() {
                             type="button"
                             onClick={() => toggleDistrict(d.name)}
                             aria-pressed={on}
-                            className="flex items-center gap-2 rounded text-left font-medium hover:text-accent-ink"
+                            className="-my-2 flex min-h-9 w-full items-center gap-2 rounded py-2 text-left font-medium hover:text-accent-ink"
                           >
                             <span className="size-2 shrink-0 rounded-full" style={{ background: BAND_VAR[meta.band(d)].fill }} aria-hidden />
                             {d.name}
@@ -184,14 +191,15 @@ export function OverviewView() {
         </CardHeader>
         <CardContent>
           {data ? (
-            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <ul className={cn("grid grid-cols-1 gap-3 md:grid-cols-2", ALERT_COLS[data.alerts.length] ?? "xl:grid-cols-4")}>
               {data.alerts.map((a) => {
                 const tone = ALERT_ICON[a.tone];
+                const Icon = ALERT_ID_ICON[a.id] ?? tone.icon;
                 return (
                   <li key={a.id}>
                     <Link href={a.href} className="group flex h-full flex-col rounded-xl border border-line bg-surface-2/40 p-4 transition-colors hover:border-line-strong hover:bg-surface-2">
                       <span className={cn("flex size-8 items-center justify-center rounded-lg", tone.className)} aria-hidden>
-                        <tone.icon className="size-4" />
+                        <Icon className="size-4" />
                       </span>
                       <span className="mt-3 text-sm leading-snug font-semibold text-fg">{a.title}</span>
                       <span className="mt-1 flex-1 text-xs leading-5 text-fg-muted">{a.body}</span>

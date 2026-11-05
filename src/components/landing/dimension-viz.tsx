@@ -110,19 +110,22 @@ export function BrakeViz() {
   );
 }
 
+/** Rounded so the server and the browser agree: the sin hash amplifies tiny engine differences into hydration mismatches. */
+const round = (v: number, digits = 2) => Math.round(v * 10 ** digits) / 10 ** digits;
+
 const PARTICLES = Array.from({ length: 64 }, (_, i) => {
   const r = (n: number) => {
     const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453;
-    return v - Math.floor(v);
+    return round(v - Math.floor(v), 4);
   };
   const dense = i < 40; // traffic side is denser
   return {
-    x: dense ? 30 + r(1) * 230 : 230 + r(1) * 220,
-    y: 40 + r(2) * 150,
-    size: 1.6 + r(3) * 3.4,
-    dur: 5 + r(4) * 6,
-    delay: -r(5) * 8,
-    o: 0.35 + r(6) * 0.6,
+    x: round(dense ? 30 + r(1) * 230 : 230 + r(1) * 220),
+    y: round(40 + r(2) * 150),
+    size: round(1.6 + r(3) * 3.4),
+    dur: round(5 + r(4) * 6),
+    delay: round(-r(5) * 8),
+    o: round(0.35 + r(6) * 0.6, 3),
   };
 });
 

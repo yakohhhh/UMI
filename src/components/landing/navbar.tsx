@@ -22,25 +22,31 @@ export function Navbar() {
 
   useEffect(() => {
     let raf = 0;
+    let max = 0;
     const update = () => {
       raf = 0;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      if (barRef.current) barRef.current.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+      if (barRef.current) barRef.current.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
       setScrolled(window.scrollY > 24);
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
     };
-    update();
+    // Reading scrollHeight forces a layout, so it is measured only when the page
+    // can change height (resize, pin spacers added by ScrollTrigger), never per scroll frame.
+    const measure = () => {
+      max = document.documentElement.scrollHeight - window.innerHeight;
+      onScroll();
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(document.body);
+    measure();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    // pinned sections change the document height once ScrollTrigger has measured them
-    const t = window.setTimeout(update, 600);
+    window.addEventListener("resize", measure);
     return () => {
+      ro.disconnect();
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("resize", measure);
       cancelAnimationFrame(raf);
-      window.clearTimeout(t);
     };
   }, []);
 
@@ -60,7 +66,7 @@ export function Navbar() {
           className={cn(
             "relative flex items-center justify-between rounded-2xl px-3 transition-[background-color,border-color,box-shadow,height] duration-500 ease-out-expo sm:px-4",
             scrolled
-              ? "h-14 border border-white/10 bg-asphalt-900/70 shadow-[0_12px_40px_-18px_rgb(0_0_0/0.8)] backdrop-blur-xl backdrop-saturate-150"
+              ? "h-14 border border-white/10 bg-asphalt-900/80 shadow-[0_12px_40px_-18px_rgb(0_0_0/0.8)] backdrop-blur-md"
               : "h-16 border border-transparent",
           )}
         >

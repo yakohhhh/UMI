@@ -26,7 +26,7 @@ export function PremiumCard() {
   const [started, setStarted] = useState(false);
   const p = PRICES[plan];
   return (
-    <section id="premium" aria-labelledby="premium-title" className="relative scroll-mt-24 overflow-hidden rounded-3xl border border-line bg-asphalt-900 text-paper shadow-[var(--shadow-lift)]">
+    <section id="premium" aria-labelledby="premium-title" className="relative scroll-mt-32 overflow-hidden rounded-3xl border border-line bg-asphalt-900 text-paper shadow-[var(--shadow-lift)]">
       <div aria-hidden className="grain pointer-events-none absolute inset-0 opacity-60" />
       <div aria-hidden className="absolute -top-32 -right-24 size-80 rounded-full bg-signal/25 blur-3xl" />
       <div aria-hidden className="absolute -bottom-40 left-1/4 size-80 rounded-full bg-lane/15 blur-3xl" />

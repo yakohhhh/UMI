@@ -384,25 +384,60 @@ html.lenis body {
 /* ------------------------------------------------------------------ */
 /*  Landing                                                            */
 /* ------------------------------------------------------------------ */
-@keyframes umi-trace {
-  0% {
-    stroke-dashoffset: 1;
-    opacity: 1;
+/* Hero intro in plain CSS, before any JS loads. The title and the paragraph are the
+   page's LCP: they start dim but never invisible, so the first paint already counts. */
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
   }
+}
+@keyframes hero-rise {
+  from {
+    opacity: 0.25;
+    transform: translateY(0.4em);
+  }
+}
+.hero-word {
+  animation: hero-rise 1s var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--i) * 0.07s);
+}
+.hero-fade {
+  animation: hero-in 0.9s var(--ease-out-expo) backwards;
+  animation-delay: calc(0.4s + var(--i) * 0.08s);
+}
+.hero-lead {
+  animation: hero-rise 0.9s var(--ease-out-expo) backwards;
+  animation-delay: 0.35s;
+}
+
+/* Off-screen landing sections pause their looping animations (set in Landing). */
+[data-offscreen] *,
+[data-offscreen] *::before,
+[data-offscreen] *::after {
+  animation-play-state: paused !important;
+}
+/* Hero ride trace: drawn chunk by chunk (one keyframes per chunk, built in hero.tsx)
+   so each frame repaints one short stretch; the fade runs on the compositor. */
+@keyframes umi-trace-fade {
+  0%,
   62% {
-    stroke-dashoffset: 0;
     opacity: 1;
   }
   86%,
   100% {
-    stroke-dashoffset: 0;
     opacity: 0;
   }
+}
+.hero-trace-fade {
+  animation: umi-trace-fade 7.5s var(--ease-in-out-cubic) infinite;
 }
 .hero-trace {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: umi-trace 7.5s var(--ease-in-out-cubic) infinite;
+  animation-duration: 7.5s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 @keyframes umi-scroll {
   0% {

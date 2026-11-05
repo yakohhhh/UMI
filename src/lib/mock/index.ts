@@ -23,6 +23,7 @@ import type {
   SurfaceRankRow,
 } from "../types";
 import type { MultiPolygon, Polygon } from "geojson";
+import { MOCK_BRAKE_ANSWERS, MOCK_CITY_HAZARDS, MOCK_FLAGS } from "./flags";
 
 /** The moment the mock data was generated (Thursday 15 Oct 2026, 19:10 Barcelona). */
 export const MOCK_ANCHOR = new Date("2026-10-15T19:10:00+02:00");
@@ -63,6 +64,9 @@ export const loadCityOutline = () =>
 export const loadPotholes = () =>
   once("potholes", async () => ((await import("./data/potholes.json")).default as unknown as Pothole[]).map((p) => ({ ...p, firstSeen: shiftDay(p.firstSeen) })));
 
+export const loadCityHazards = () =>
+  once("cityHazards", async () => MOCK_CITY_HAZARDS.map((h) => ({ ...h, firstSeen: shiftDay(h.firstSeen), lastConfirmed: shiftDay(h.lastConfirmed) })));
+
 export const loadHotspots = () => once("hotspots", async () => (await import("./data/hotspots.json")).default as unknown as BrakeHotspot[]);
 
 export const loadRoutes = () => once("routes", async () => (await import("./data/routes.json")).default as unknown as PlannedRoute[]);
@@ -72,8 +76,19 @@ export const loadPeople = () =>
 
 export const loadActivities = () =>
   once("activities", async () => {
-    const raw = (await import("./data/activities.json")).default as unknown as ActivitySummary[];
-    return raw.map((a) => ({ ...a, startedAt: shiftIso(a.startedAt) }));
+    const raw = (await import("./data/activities.json")).default as unknown as Omit<ActivitySummary, "flags">[];
+    return raw.map(
+      (a): ActivitySummary => ({
+        ...a,
+        startedAt: shiftIso(a.startedAt),
+        events: a.events.map((e, i) => {
+          const id = `${a.id}-e${i}`;
+          const answer = MOCK_BRAKE_ANSWERS[id] as (typeof MOCK_BRAKE_ANSWERS)[string] | undefined;
+          return e.type === "hard_brake" ? { ...e, id, cause: answer?.cause ?? null, ask: answer?.ask ?? false } : { ...e, id };
+        }),
+        flags: MOCK_FLAGS[a.id] ?? [],
+      }),
+    );
   });
 
 export const loadActivityDetails = () =>

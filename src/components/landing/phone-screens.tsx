@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, Bike, CircleDot, Leaf, Navigation, Wind } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bike, CircleDot, Construction, Leaf, Navigation, Wind } from "lucide-react";
 import { forwardRef } from "react";
 import { BAND_COLORS, scoreBand } from "@/lib/score";
 import { phoneMap, rideMap } from "./data/geo";
@@ -61,7 +61,7 @@ export function RideReportScreen() {
         <div className="flex items-center gap-1.5 text-[10px] text-asphalt-300">
           <Bike className="size-3 text-signal" /> Today · 07:52 · Gràcia → 22@
         </div>
-        <h4 className="mt-1 font-display text-lg font-semibold text-paper">Morning commute</h4>
+        <p className="mt-1 font-display text-lg font-semibold text-paper">Morning commute</p>
       </div>
       <div className="relative mx-4 mt-3 h-[150px] overflow-hidden rounded-2xl bg-asphalt-950">
         <svg viewBox={`${phoneMap.w * 0.05} ${phoneMap.h * 0.12} ${phoneMap.w * 0.95} ${phoneMap.h * 0.55}`} className="size-full" aria-hidden>
@@ -89,13 +89,14 @@ export function RideReportScreen() {
         {ring(ride.scores.air, "Air")}
         {ring(ride.scores.noise, "Noise")}
       </div>
-      <ul className="mx-4 mt-3 space-y-1.5">
+      <ul className="mx-4 mt-3 space-y-1">
         {[
           { icon: AlertTriangle, t: "Hard brake", d: "07:59 · Diagonal × Sant Joan", c: "#ff5b1f" },
           { icon: CircleDot, t: "Pothole", d: "08:01 · Av. Diagonal", c: "#f5c542" },
+          { icon: Construction, t: "Roadworks", d: "08:02 · flagged by voice", c: "#f5c542" },
           { icon: Wind, t: "PM2.5 spike", d: "08:05 · Glòries · 34 µg/m³", c: "#ff5b1f" },
         ].map((e) => (
-          <li key={e.t} className="flex items-center gap-2 rounded-xl bg-asphalt-800/70 px-2.5 py-2">
+          <li key={e.t} className="flex items-center gap-2 rounded-xl bg-asphalt-800/70 px-2.5 py-1.5">
             <e.icon className="size-3.5" style={{ color: e.c }} />
             <span className="text-[11px] font-medium text-paper">{e.t}</span>
             <span className="ml-auto text-[9.5px] text-asphalt-300">{e.d}</span>
@@ -112,7 +113,7 @@ export const StreetMapScreen = forwardRef<HTMLDivElement, { hour: number }>(func
     <div ref={ref} className="relative flex h-full flex-col bg-asphalt-950">
       <StatusBar time="17:58" />
       <div className="mx-4 mt-2 flex items-center justify-between">
-        <h4 className="font-display text-base font-semibold text-paper">Street map</h4>
+        <p className="font-display text-base font-semibold text-paper">Street map</p>
         <span className="rounded-full bg-asphalt-800 px-2 py-0.5 text-[10px] text-asphalt-200">Overall</span>
       </div>
       <div className="relative mt-2 flex-1 overflow-hidden">
@@ -155,7 +156,7 @@ export function RoutesScreen() {
     <div className="flex h-full flex-col bg-asphalt-900">
       <StatusBar time="07:41" />
       <div className="mx-4 mt-2">
-        <h4 className="font-display text-base font-semibold text-paper">Choose a route</h4>
+        <p className="font-display text-base font-semibold text-paper">Choose a route</p>
         <p className="text-[10px] text-asphalt-300">Gràcia → 22@ · leaving now</p>
       </div>
       <div className="relative mx-4 mt-2 h-[176px] overflow-hidden rounded-2xl bg-asphalt-950">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bike, Footprints, Hand, MessageCircle, Share2 } from "lucide-react";
+import { Bike, Footprints, Hand, MessageCircle, MessageCircleQuestionMark, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ScorePills } from "@/components/score/score-badge";
@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { formatActivityDate, formatDuration, formatKm, formatPace } from "@/lib/format";
 import { mockNow } from "@/lib/mock";
+import { momentsToCheck } from "@/lib/reports";
 import type { ActivitySummary, Athlete, RideEventType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RouteThumb } from "./route-thumb";
@@ -19,10 +20,13 @@ const EVENT_LABEL: Record<RideEventType, [string, string]> = {
   noise_peak: ["noise peak", "noise peaks"],
 };
 
-export function eventSummary(events: ActivitySummary["events"]) {
+/** "1 hard brake · 2 potholes · 1 flag": what the sensors recorded, then what the rider flagged. */
+export function eventSummary(events: ActivitySummary["events"], flags: ActivitySummary["flags"] = []) {
   const counts = new Map<RideEventType, number>();
   for (const e of events) counts.set(e.type, (counts.get(e.type) ?? 0) + 1);
-  return [...counts.entries()].map(([t, n]) => `${n} ${EVENT_LABEL[t][n === 1 ? 0 : 1]}`).join(" · ");
+  const parts = [...counts.entries()].map(([t, n]) => `${n} ${EVENT_LABEL[t][n === 1 ? 0 : 1]}`);
+  if (flags.length) parts.push(`${flags.length} ${flags.length === 1 ? "flag" : "flags"}`);
+  return parts.join(" · ");
 }
 
 export function ActivityCard({ activity, athlete, isOwn }: { activity: ActivitySummary; athlete: Athlete; isOwn: boolean }) {
@@ -30,7 +34,8 @@ export function ActivityCard({ activity, athlete, isOwn }: { activity: ActivityS
   const kudos = activity.kudos + (kudoed ? 1 : 0);
   const Icon = activity.type === "ride" ? Bike : Footprints;
   const href = `/app/activities/${activity.id}`;
-  const events = eventSummary(activity.events);
+  const events = eventSummary(activity.events, activity.flags);
+  const toCheck = isOwn ? momentsToCheck(activity) : 0;
 
   return (
     <Card className="overflow-hidden" aria-labelledby={`act-${activity.id}`}>
@@ -82,6 +87,16 @@ export function ActivityCard({ activity, athlete, isOwn }: { activity: ActivityS
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 pt-4">
         <ScorePills scores={activity.scores} />
         {events ? <p className="text-xs text-fg-muted">{events}</p> : <p className="text-xs text-fg-subtle">No incidents recorded</p>}
+        {toCheck ? (
+          <Link
+            href={`${href}#moments`}
+            aria-label={`${toCheck} ${toCheck === 1 ? "moment" : "moments"} to check on ${activity.title}`}
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-signal/25 bg-signal/12 px-3 text-xs font-medium text-accent-ink transition-colors hover:bg-signal/20"
+          >
+            <MessageCircleQuestionMark className="size-3.5" aria-hidden />
+            {toCheck} {toCheck === 1 ? "moment" : "moments"} to check
+          </Link>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center gap-1 border-t border-line px-3 py-2">

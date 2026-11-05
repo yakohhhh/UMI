@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Eye, EyeOff, KeyRound, Lock, RefreshCw, ShieldCheck, Timer, UsersRound } from "lucide-react";
+import { CalendarDays, Check, Copy, Eye, EyeOff, Flag, KeyRound, Lock, Percent, RefreshCw, ShieldCheck, Timer, UserX, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ErrorState } from "@/components/data/states";
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getApiUsage } from "@/lib/api";
 import { formatDay, formatInt } from "@/lib/format";
 import { useApi } from "@/lib/hooks/use-api";
+import { CITY_MIN_RIDERS } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "./page-header";
 
@@ -85,11 +86,37 @@ function CodeBlock({ code, label, language }: { code: string; label: string; lan
   );
 }
 
+/** What one rider-flagged hazard looks like in the API: day-level dates, a rider count, no reporter. */
+const HAZARD_SAMPLE = `{
+  "id": "hz-2",
+  "kind": "blocked_lane",
+  "street": "Avinguda Diagonal (Roger de Flor → Padilla)",
+  "district": "Eixample",
+  "coordinates": [2.17282, 41.39987],
+  "riders": 9,
+  "firstSeen": "2026-10-02",
+  "lastConfirmed": "2026-10-14",
+  "status": "sent_to_iris"
+}`;
+
+/** Endpoints that changed with rider flags and brake causes. */
+const ENDPOINT_TAG: Record<string, string> = {
+  "/v1/city/hazards": "New",
+  "/v1/city/safety/hotspots": "Causes added",
+};
+
 const PRIVACY = [
   { icon: Lock, title: "Trimmed on the phone", body: "The first and last 200 m of every trip are cut before upload, so homes and workplaces never reach our servers." },
   { icon: UsersRound, title: "k ≥ 5 riders", body: "A street segment and hour is published only once at least 5 different riders crossed it in the period." },
   { icon: Timer, title: "Hourly aggregates", body: "The API serves means and percentiles per segment and hour. Individual traces and timestamps are never exposed." },
   { icon: ShieldCheck, title: "Opt-in, GDPR-native", body: "Riders choose to share with the city and can withdraw at any time; EU hosting, no resale, Data Act compliant." },
+];
+
+const HAZARD_PRIVACY = [
+  { icon: UsersRound, title: `${CITY_MIN_RIDERS} riders or nothing`, body: `A hazard is published only once ${CITY_MIN_RIDERS} different riders flagged it or their Clips confirmed it. A cause mix needs ${CITY_MIN_RIDERS} different riders' answers.` },
+  { icon: CalendarDays, title: "Day-level dates", body: "First seen and last confirmed are days, never times, so a flag can't be matched to a ride." },
+  { icon: UserX, title: "Never who", body: "No rider id, no ride id, no route. Riders hear back when it's fixed; the city never learns who they are." },
+  { icon: Percent, title: "Mixes rounded to 10%", body: "Why riders brake is rounded to 10% steps, causes under 10% merge into other, and “just me” answers are left out." },
 ];
 
 export function ApiView() {
@@ -215,9 +242,14 @@ export function ApiView() {
               <ul className="divide-y divide-line">
                 {u.endpoints.map((e) => (
                   <li key={e.path} className="py-3">
-                    <p className="flex items-center gap-2 font-mono text-[12.5px] text-fg">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[12.5px] text-fg">
                       <span className="rounded bg-good-fill/15 px-1.5 py-0.5 text-[10px] font-semibold text-good">{e.method}</span>
-                      <span className="truncate">{e.path}</span>
+                      <span className="min-w-0 break-all">{e.path}</span>
+                      {ENDPOINT_TAG[e.path] ? (
+                        <Badge variant={ENDPOINT_TAG[e.path] === "New" ? "signal" : "neutral"} size="sm" className="ml-auto font-sans">
+                          {ENDPOINT_TAG[e.path]}
+                        </Badge>
+                      ) : null}
                     </p>
                     <p className="mt-1 text-xs text-fg-muted">{e.description}</p>
                   </li>
@@ -272,6 +304,31 @@ export function ApiView() {
               <p className="mt-1 text-xs leading-5 text-fg-muted">{p.body}</p>
             </li>
           ))}
+          <li className="rounded-2xl border border-line bg-surface p-4 sm:col-span-2 sm:p-5 xl:col-span-4">
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
+              <div>
+                <Flag className="size-5 text-good" aria-hidden />
+                <h3 className="mt-3 text-sm font-semibold text-fg">Rider flags and brake causes</h3>
+                <p className="mt-1 max-w-xl text-xs leading-5 text-fg-muted">
+                  Riders flag hazards from the button on their Clip and say why they braked after the ride. Only keywords leave the Clip, never audio. The city gets the pattern, not the people:
+                </p>
+                <ul className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                  {HAZARD_PRIVACY.map((p) => (
+                    <li key={p.title} className="flex gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-good-fill/12 text-good" aria-hidden>
+                        <p.icon className="size-4" />
+                      </span>
+                      <span>
+                        <span className="block text-[13px] font-semibold text-fg">{p.title}</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-fg-muted">{p.body}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <CodeBlock code={HAZARD_SAMPLE} label="GET /v1/city/hazards · one item" language="JSON" />
+            </div>
+          </li>
         </ul>
       </section>
     </div>

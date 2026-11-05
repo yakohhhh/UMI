@@ -144,7 +144,7 @@ export function PhoneShowcase() {
           <div className="relative mt-4 hidden h-[260px] lg:motion-safe:block">
             {STEPS.map((s, i) => (
               <div key={s.title} className="ph-text absolute inset-x-0 top-0">
-                <p className="font-mono text-xs text-asphalt-400">
+                <p className="font-mono text-xs text-asphalt-300">
                   0{i + 1} · {s.eyebrow}
                 </p>
                 <h3 className="mt-3 font-display text-5xl leading-tight font-semibold tracking-tight text-balance text-paper">{s.title}</h3>
@@ -163,7 +163,7 @@ export function PhoneShowcase() {
           <ol className="mt-6 hidden space-y-[40vh] pb-[30vh] lg:motion-reduce:block">
             {STEPS.map((s, i) => (
               <li key={s.title} className="ph-step">
-                <p className="font-mono text-xs text-asphalt-400">
+                <p className="font-mono text-xs text-asphalt-300">
                   0{i + 1} · {s.eyebrow}
                 </p>
                 <h3 className="mt-3 font-display text-4xl leading-tight font-semibold tracking-tight text-balance text-paper">{s.title}</h3>
@@ -194,7 +194,7 @@ export function PhoneShowcase() {
           <ol className="relative z-20 mt-6 space-y-[45vh] pb-[20vh] lg:hidden">
             {STEPS.map((s, i) => (
               <li key={s.title} className="ph-step rounded-3xl border border-white/10 bg-asphalt-850/95 p-6 backdrop-blur-md">
-                <p className="font-mono text-xs text-asphalt-400">
+                <p className="font-mono text-xs text-asphalt-300">
                   0{i + 1} · {s.eyebrow}
                 </p>
                 <h3 className="mt-2 font-display text-2xl font-semibold text-paper">{s.title}</h3>

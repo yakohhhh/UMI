@@ -3,21 +3,25 @@
 import type { ExpressionSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Layer, Source, type MapLayerMouseEvent, type MapRef } from "react-map-gl/maplibre";
+import { CAUSE_META } from "@/components/app/ride-events";
 import { BaseMap } from "@/components/map/base-map";
 import { hourLabel } from "@/lib/format";
 import { usePrefersReducedMotion } from "@/lib/hooks/use-media-query";
 import { useResolvedTheme } from "@/lib/hooks/use-resolved-theme";
-import type { BrakeHotspot } from "@/lib/types";
+import type { BrakeCause, BrakeHotspot } from "@/lib/types";
 import { hotspotRadius } from "./hotspot-scale";
 
 export default function HotspotMap({
   hotspots,
   activeId,
   onActive,
+  causeStyle,
 }: {
   hotspots: BrakeHotspot[];
   activeId: string | null;
   onActive: (id: string | null) => void;
+  /** City-facing cause names and bar colours, so the popup matches the table; falls back to the rider app's labels. */
+  causeStyle?: Partial<Record<BrakeCause, { label: string; color: string }>>;
 }) {
   const theme = useResolvedTheme();
   const reduceMotion = usePrefersReducedMotion();
@@ -57,6 +61,11 @@ export default function HotspotMap({
   };
 
   const h = hover ? hotspots.find((x) => x.id === hover.id) : undefined;
+  // top named causes only: "other" is a bundle of small ones and says nothing on its own
+  const why = (h?.causes ?? [])
+    .filter((c): c is { cause: BrakeCause; share: number } => c.cause !== "other")
+    .sort((a, b) => b.share - a.share)
+    .slice(0, 3);
   const radius: ExpressionSpecification = ["get", "r"];
 
   return (
@@ -106,6 +115,29 @@ export default function HotspotMap({
               {h.trend}% vs prev.
             </span>
           </p>
+          {why.length ? (
+            <div className="mt-2 border-t border-line pt-2">
+              <p className="label-mono text-[10px] text-fg-subtle">
+                Why riders brake{h.answeredBy ? ` · ${h.answeredBy} riders` : ""}
+              </p>
+              <ul className="mt-1 space-y-0.5 text-xs text-fg-muted">
+                {why.map((c) => {
+                  const m = CAUSE_META[c.cause];
+                  const s = causeStyle?.[c.cause];
+                  return (
+                    <li key={c.cause} className="flex items-center gap-1.5">
+                      {s ? <span className="size-2 shrink-0 rounded-[2px]" style={{ background: s.color }} aria-hidden /> : null}
+                      <m.icon className="size-3.5 shrink-0 text-fg-subtle" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate">{s?.label ?? m.label}</span>
+                      <span className="font-num font-semibold text-fg">{Math.round(c.share * 100)}%</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : (
+            <p className="mt-1.5 text-[11px] text-fg-subtle">Why riders brake: not enough answers yet</p>
+          )}
         </div>
       ) : null}
     </div>
