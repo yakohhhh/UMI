@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Bike, Clock, Flame, MapPinned, RefreshCw, Users, Wind } from "lucide-react";
+import { ArrowRight, Award, Bike, Clock, Flame, ListChecks, MapPinned, RefreshCw, Users, Wind } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ClipBattery } from "@/components/shell/clip-battery";
@@ -11,13 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAthlete, getBestWindow, getClipStatus, getCurrentAthlete, getFeed, getProfileStats, getWeekStats } from "@/lib/api";
-import { formatDay, formatDuration, formatRelative, greeting } from "@/lib/format";
+import { CURRENT_ATHLETE_ID, getAthlete, getBestWindow, getClipStatus, getCurrentAthlete, getFeed, getProfileStats, getWeekStats } from "@/lib/api";
+import { formatDay, formatDuration, formatInt, formatRelative, greeting, TIME_ZONE } from "@/lib/format";
 import { useApi } from "@/lib/hooks/use-api";
 import { mockNow } from "@/lib/mock";
-import type { Athlete } from "@/lib/types";
+import { momentsToCheck } from "@/lib/reports";
+import type { ActivitySummary, Athlete, FlagReport } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ActivityCard, ActivityCardSkeleton } from "./activity-card";
+import { FLAG_STATUS_META, HAZARD_META } from "./ride-events";
 
 // PM2.5 forecast along Laia's usual route today (µg/m³, by hour).
 const TODAY_PM = [9, 8, 8, 8, 9, 11, 15, 21, 24, 20, 16, 14, 13, 12, 11, 11, 12, 13, 9.5, 9, 10, 10.5, 10, 9];
@@ -189,10 +191,50 @@ function ClipCard() {
   );
 }
 
-function StreetsImproved() {
+/** Street name without its type, for one-line sentences: "Avinguda Diagonal" → "Diagonal", "Carrer de Rocafort" → "Rocafort". */
+const bareStreet = (s: string) => s.replace(/^(Avinguda|Carrer|Passeig|Plaça|Ronda|Rambla|Via)\s+(de\s+les\s+|de\s+la\s+|de\s+l'|del\s+|de\s+)?/, "");
+
+/** One line for a flag that has an outcome (verified, sent to the city, fixed or gone); null while it waits for riders. */
+function flagOutcome(f: FlagReport) {
+  const thing = f.kind ? HAZARD_META[f.kind].label.toLowerCase() : "hazard";
+  const flag = f.kind ? `${thing} flag` : "flag";
+  const where = f.street ? ` on ${bareStreet(f.street)}` : "";
+  switch (f.status) {
+    case "verified":
+      return `Your ${flag}${where} is verified · ${formatInt(f.ridersWarned)} riders warned`;
+    case "sent_to_city":
+      return `Your ${flag}${where} went to the city · ${f.confirmations + 1} riders agree`;
+    case "fixed":
+      return `Fixed: the ${thing} you flagged${where}${f.proof ? ` · ${f.proof}` : ""}`;
+    case "expired":
+      return `The ${thing} you flagged${where} is gone · ${formatInt(f.ridersWarned)} riders warned`;
+    default:
+      return null;
+  }
+}
+
+/** "this morning", "yesterday" or the weekday of a ride, relative to now (Barcelona time). */
+function rideWhen(iso: string, now: Date) {
+  const day = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(d);
+  const start = new Date(iso);
+  if (day(start) === day(now)) {
+    const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(start));
+    return h < 12 ? "this morning" : h < 18 ? "this afternoon" : "this evening";
+  }
+  if (day(start) === day(new Date(now.getTime() - 86_400_000))) return "yesterday";
+  return formatDay(iso, { weekday: "long" });
+}
+
+function StreetsImproved({ feed }: { feed?: ActivitySummary[] }) {
   const { data } = useApi(getProfileStats);
   const c = data?.contributions;
   const max = c ? Math.max(...c.topStreets.map((s) => s.passes)) : 1;
+  // Flags come newest first: show the latest one that has an outcome.
+  const latestFlag = c?.flags.find((f) => f.status !== "pending");
+  const outcome = latestFlag ? flagOutcome(latestFlag) : null;
+  const OutcomeIcon = latestFlag ? FLAG_STATUS_META[latestFlag.status].icon : null;
+  const lastRide = feed?.filter((a) => a.athleteId === CURRENT_ATHLETE_ID).sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1))[0];
+  const moments = lastRide ? momentsToCheck(lastRide) : 0;
   return (
     <Card>
       <CardHeader>
@@ -206,6 +248,29 @@ function StreetsImproved() {
               Your rides refined <span className="font-semibold text-fg">{c.streetsImproved} street segments</span> this month and confirmed{" "}
               <span className="font-semibold text-fg">{c.potholesConfirmed} potholes</span> for the city.
             </p>
+            {outcome && OutcomeIcon ? (
+              <Link href="/app/profile#contributions" className="mt-3 flex items-start gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5 text-xs leading-5 text-fg transition-colors hover:bg-surface-3">
+                <OutcomeIcon className="mt-0.5 size-3.5 shrink-0 text-fg-muted" aria-hidden />
+                <span>{outcome}</span>
+              </Link>
+            ) : null}
+            {lastRide && moments > 0 ? (
+              <Link
+                href={`/app/activities/${lastRide.id}#moments`}
+                className="mt-2 flex items-center gap-3 rounded-xl border border-signal/25 bg-signal/10 px-3 py-2.5 transition-colors hover:bg-signal/15"
+              >
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-signal text-asphalt-900" aria-hidden>
+                  <ListChecks className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-fg">
+                    {moments} {moments === 1 ? "moment" : "moments"} to check from {rideWhen(lastRide.startedAt, mockNow())}
+                  </span>
+                  <span className="block text-xs text-fg-muted">One tap each · under 10 seconds · skip any</span>
+                </span>
+                <ArrowRight className="size-4 shrink-0 text-accent-ink" aria-hidden />
+              </Link>
+            ) : null}
             <ul className="mt-4 space-y-2.5">
               {c.topStreets.map((s) => (
                 <li key={s.name}>
@@ -313,7 +378,7 @@ export function HomeFeed() {
           ) : (
             <>
               {feed.data!.slice(0, visible).map((a) => (
-                <ActivityCard key={a.id} activity={a} athlete={people[a.athleteId] ?? { id: a.athleteId, name: "Rider", firstName: "Rider", initials: "R", age: 0, city: "", vehicle: "" }} isOwn={a.athleteId === "laia"} />
+                <ActivityCard key={a.id} activity={a} athlete={people[a.athleteId] ?? { id: a.athleteId, name: "Rider", firstName: "Rider", initials: "R", age: 0, city: "", vehicle: "" }} isOwn={a.athleteId === CURRENT_ATHLETE_ID} />
               ))}
               {visible < feed.data!.length ? (
                 <div className="flex justify-center">
@@ -330,7 +395,7 @@ export function HomeFeed() {
       <aside className="space-y-4 xl:sticky xl:top-[88px] xl:self-start" aria-label="Your profile and Clip">
         <MiniProfile me={me.data} />
         <ClipCard />
-        <StreetsImproved />
+        <StreetsImproved feed={feed.data} />
         <Clubs />
       </aside>
     </div>

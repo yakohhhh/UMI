@@ -95,7 +95,7 @@ export function Pricing() {
               </span>
             </p>
             <p className="mt-1 text-sm text-asphalt-300">One-time · first 600 riders · then €119</p>
-            <Features items={["Comfort, safety, air and noise sensors", "A week of commutes per charge, USB-C", "Clips on bike, scooter, bag strap or belt", "Free UMI app with every ride report"]} />
+            <Features items={["Comfort, safety, air and noise sensors", "A week of commutes per charge, USB-C", "Clips on bike, scooter, bag strap or belt", "Free UMI app with every ride report", "Verified hazard warnings, free for everyone"]} />
             <div className="mt-auto pt-8">
               <Button asChild size="lg" pill className="w-full">
                 <a href="#preorder">Pre-order — €99</a>
@@ -124,7 +124,7 @@ export function Pricing() {
             </p>
             <p className="mt-1 text-sm text-asphalt-300">{billing === "yearly" ? "€3.33 a month · save 33%" : "Cancel anytime"}</p>
             <Features items={["Calmest and cleanest route planner", "Hour-by-hour street map", "Exposure history vs WHO and EU limits", "Export all your data, anytime"]} />
-            <p className="mt-6 text-xs text-asphalt-300">The app stays free: ride reports, street map, weekly stats.</p>
+            <p className="mt-6 text-xs text-asphalt-300">The app stays free: ride reports, street map, hazard warnings, weekly stats.</p>
             <div className="mt-auto pt-6">
               <Button variant="glass" size="lg" pill className="w-full">
                 Start a 30-day trial
@@ -138,7 +138,7 @@ export function Pricing() {
               <span className="font-num text-5xl font-semibold text-paper">€14,900</span>
             </p>
             <p className="mt-1 text-sm text-asphalt-300">3-month pilot · then annual licence</p>
-            <Features items={["Surface index and repair priorities", "Hard-brake hotspots by junction", "Hourly air and noise exposure", "API and CSV exports, GDPR by design"]} />
+            <Features items={["Surface index and repair priorities", "Hard-brake hotspots and why riders brake", "Hourly air and noise exposure", "API and CSV exports, GDPR by design"]} />
             <p className="mt-6 text-xs text-asphalt-300">For city councils, bike-share operators and fleets.</p>
             <div className="mt-auto pt-6">
               <Button asChild variant="paper" size="lg" pill className="w-full">

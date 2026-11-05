@@ -113,8 +113,8 @@ export function TimelineChart({
                 label={{ value: r.label, position: r.below ? "insideTopRight" : "insideBottomRight", fill: r.color ?? "var(--fg-subtle)", fontSize: 10, fontFamily: "var(--font-mono)" }}
               />
             ))}
-            {series.events?.map((e) => (
-              <ReferenceLine key={`${e.t}-${e.label}`} x={e.t} stroke="var(--color-signal)" strokeDasharray="2 3" label={{ value: e.label, position: "insideTopLeft", fill: "var(--accent-ink)", fontSize: 10 }} />
+            {series.events?.map((e, i) => (
+              <ReferenceLine key={`${i}-${e.t}`} x={e.t} stroke="var(--color-signal)" strokeDasharray="2 3" label={{ value: e.label, position: "insideTopLeft", fill: "var(--accent-ink)", fontSize: 10 }} />
             ))}
             <Area
               type="monotone"

@@ -49,6 +49,7 @@ function ExportDialog() {
         <ul className="space-y-2.5 text-sm">
           {[
             "Every ride and run, with scores and events",
+            "Your flags and answers (never audio: the Clip doesn't keep any)",
             "12 months of PM2.5 and noise exposure, day by day",
             "Your profile, records, badges and Clip settings",
           ].map((t) => (
@@ -157,7 +158,7 @@ export function PrivacySettings() {
   const [trim, setTrim] = useState(200);
 
   return (
-    <Card id="privacy" className="scroll-mt-24">
+    <Card id="privacy" className="scroll-mt-32">
       <CardHeader>
         <div>
           <CardTitle>Privacy & data</CardTitle>
@@ -171,7 +172,7 @@ export function PrivacySettings() {
             <label htmlFor={`${id}-share`} className="min-w-0 flex-1 cursor-pointer">
               <span className="block text-sm font-medium text-fg">Help Barcelona fix its streets</span>
               <span className="mt-0.5 block text-xs leading-5 text-fg-muted">
-                Share anonymised street measurements with City Insights. Data is aggregated with at least 5 other riders and never includes your identity.
+                Share anonymised street measurements, flags and brake reasons with City Insights. A street is published only once at least 5 different riders crossed it, a hazard once 5 different riders flagged or confirmed it (dated to the day), and never with your identity. “Just me” answers stay in your rides.
               </span>
             </label>
             <Switch id={`${id}-share`} checked={share} onCheckedChange={setShare} className="mt-0.5" />

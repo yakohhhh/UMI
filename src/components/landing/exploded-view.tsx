@@ -128,12 +128,12 @@ const Battery = () => (
 );
 
 const LAYERS: Layer[] = [
-  { id: "housing", label: "Housing", detail: "Recycled aluminium & polycarbonate · IP54", w: CLIP.w, h: CLIP.h, thick: 10, edge: "#0b111c", radius: CLIP.radius, art: <ClipFace /> },
+  { id: "housing", label: "Housing", detail: "Recycled aluminium & polycarbonate · IP54 · sealed flag button", w: CLIP.w, h: CLIP.h, thick: 10, edge: "#0b111c", radius: CLIP.radius, art: <ClipFace /> },
   { id: "pcb", label: "ESP32-S3 board", detail: "Edge AI scores the ride on the Clip itself", w: 150, h: 226, thick: 4, edge: "#6b5a2c", radius: 30, art: <Pcb /> },
   { id: "gnss", label: "GNSS", detail: "Multi-band GPS + Galileo, street-level fixes", w: 84, h: 84, dy: 58, thick: 6, edge: "#5c5240", radius: 14, art: <Gnss /> },
   { id: "imu", label: "IMU · 6-axis", detail: "Vibration and hard brakes, 100 times a second", w: 60, h: 60, dy: 70, thick: 4, edge: "#0d141f", radius: 12, art: <Imu /> },
   { id: "pm", label: "PM2.5 sensor", detail: "Laser scattering, a reading every 10 s", w: 128, h: 92, dy: 64, thick: 14, edge: "#5d6677", radius: 12, art: <Pm /> },
-  { id: "mic", label: "MEMS microphone", detail: "Sound level in dB(A) — never records audio", w: 52, h: 52, dy: 84, thick: 4, edge: "#0d141f", radius: 12, art: <Mic /> },
+  { id: "mic", label: "MEMS microphone", detail: "Sound level in dB(A) · one word while you hold the button, if you turn it on · audio never leaves the Clip", w: 52, h: 52, dy: 84, thick: 4, edge: "#0d141f", radius: 12, art: <Mic /> },
   { id: "battery", label: "Battery", detail: "900 mAh LiPo · a week of commutes", w: 146, h: 208, thick: 10, edge: "#69717f", radius: 26, art: <Battery /> },
 ];
 

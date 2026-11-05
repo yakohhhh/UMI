@@ -62,9 +62,10 @@ function isActive(pathname: string, href: string) {
 
 const NOTIFICATIONS = [
   { id: 1, title: "Núria gave kudos to your Morning commute", time: "12 min ago", unread: true },
-  { id: 2, title: "Cleanest window today: 18:00–19:30 on Pg. de Sant Joan", time: "1 h ago", unread: true },
-  { id: 3, title: "The pothole you reported on Diagonal was confirmed by 9 riders", time: "Yesterday", unread: false },
+  { id: 2, title: "Your roadworks flag on Diagonal is verified: 4 riders, you included · 57 warned so far", time: "2 h ago", unread: true },
+  { id: 3, title: "2 moments to check from this morning's ride · one tap each", time: "This morning", unread: true },
   { id: 4, title: "Gràcia Riders: 62% of the October goal reached", time: "2 days ago", unread: false },
+  { id: 5, title: "Fixed: the pothole you flagged on Rocafort · comfort 52 → 81 since the repair", time: "3 days ago", unread: false },
 ];
 
 function SidebarLink({ item, collapsed, active }: { item: NavItem; collapsed: boolean; active: boolean }) {

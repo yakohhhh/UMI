@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, Lock } from "lucide-react";
+import { ArrowRight, Building2, Flag, Lock } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -150,6 +150,10 @@ export function ForCities() {
             </h2>
             <p className="mt-5 max-w-xl text-lg leading-8 text-asphalt-200">
               Every Clip is a moving sensor. City Insights aggregates them into a surface index, hard-brake hotspots and hourly exposure maps — anonymised, with trip starts and ends trimmed, GDPR by design.
+            </p>
+            <p className="mt-3 flex max-w-xl gap-2.5 leading-7 text-asphalt-300">
+              <Flag className="mt-1.5 size-4 shrink-0 text-lane-300" aria-hidden />
+              <span>Riders add what sensors can&apos;t: hazards they flag from the Clip, and why they brake at each junction. Nothing shows until 5+ different riders back it — dated to the day, never who flagged.</span>
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

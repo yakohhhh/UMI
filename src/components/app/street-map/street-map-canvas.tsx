@@ -1,18 +1,22 @@
 "use client";
 
+import { Hourglass, Route, Users } from "lucide-react";
 import type { ExpressionSpecification, FilterSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Layer, Popup, Source, type MapLayerMouseEvent, type MapRef } from "react-map-gl/maplibre";
+import { HAZARD_META } from "@/components/app/ride-events";
 import { BaseMap } from "@/components/map/base-map";
 import { BASE_COLORS } from "@/components/map/map-style";
 import { ScoreBadge } from "@/components/score/score-badge";
-import { formatDay, hourLabel, plural } from "@/lib/format";
+import { TIME_ZONE, formatDay, hourLabel, plural } from "@/lib/format";
 import { boundsOf } from "@/lib/geo";
 import { usePrefersReducedMotion } from "@/lib/hooks/use-media-query";
 import { useResolvedTheme } from "@/lib/hooks/use-resolved-theme";
+import { mockNow } from "@/lib/mock";
+import { HAZARD_LIFETIME, MAP_MIN_RIDERS } from "@/lib/reports";
 import { scoreColorExpression } from "@/lib/score";
 import { hourProp, scoreAt, streetsToGeoJSON } from "@/lib/street-geojson";
-import type { BrakeHotspot, MapMetric, Pothole, StreetSegment } from "@/lib/types";
+import type { BrakeHotspot, CityHazard, MapMetric, Pothole, StreetSegment } from "@/lib/types";
 
 export interface StreetMapFocus {
   id: string;
@@ -26,13 +30,20 @@ export interface StreetMapCanvasProps {
   hour: number;
   hotspots: BrakeHotspot[];
   potholes: Pothole[];
+  /** Live rider flags (3+ different riders, not fixed). */
+  flags: CityHazard[];
+  /** Flags the rider's Calmest commute stays clear of while another option passes them. */
+  calmestAvoids: ReadonlySet<string>;
   showHotspots: boolean;
   showPotholes: boolean;
+  showFlags: boolean;
   bikeOnly: boolean;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   /** Frame a street (from a list or a deep link). */
   focus: StreetMapFocus | null;
+  /** Fly to a flag and open its popup (from the keyboard list in the legend). */
+  flagFocus: StreetMapFocus | null;
   showControls?: boolean;
   label: string;
 }
@@ -43,10 +54,59 @@ const HALO: ExpressionSpecification = ["interpolate", ["linear"], ["zoom"], 11, 
 const ALL: FilterSpecification = ["has", "id"];
 const BIKE_ONLY: FilterSpecification = ["==", ["get", "bikeLane"], true];
 const FOCUS_OPTIONS = { padding: 120, maxZoom: 15 };
+const FLAG_STROKE = "#0b1220";
 
 const SEVERITY: Record<Pothole["severity"], string> = { low: "Minor", medium: "Noticeable", high: "Severe" };
 
-type PopupState = { kind: "hotspot"; item: BrakeHotspot } | { kind: "pothole"; item: Pothole } | null;
+type PopupState = { kind: "hotspot"; item: BrakeHotspot } | { kind: "pothole"; item: Pothole } | { kind: "flag"; item: CityHazard } | null;
+
+const madridDay = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(d);
+
+/** "today", "yesterday" or "15 Oct" for a YYYY-MM-DD day. */
+function sinceDay(day: string) {
+  const now = mockNow();
+  if (day === madridDay(now)) return "today";
+  if (day === madridDay(new Date(now.getTime() - 86_400_000))) return "yesterday";
+  return formatDay(`${day}T12:00:00Z`, { day: "numeric", month: "short" });
+}
+
+function FlagPopup({ item, avoided }: { item: CityHazard; avoided: boolean }) {
+  const meta = HAZARD_META[item.kind];
+  const Icon = meta.icon;
+  const lifetime = HAZARD_LIFETIME[item.kind];
+  return (
+    <div>
+      <p className="flex items-center gap-1.5">
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full ring-[1.5px] ring-asphalt-900" style={{ backgroundColor: meta.color }} aria-hidden>
+          <Icon className="size-3 text-asphalt-900" />
+        </span>
+        <span className="label-mono text-[10px] text-fg">{meta.label}</span>
+      </p>
+      <p className="mt-1.5 text-[13px] leading-5 font-semibold">{item.street}</p>
+      <p className="mt-0.5 text-xs text-fg-muted">
+        <span className="font-num font-semibold text-fg">{item.riders}</span> {plural(item.riders, "rider")} · first flagged {sinceDay(item.firstSeen)}
+      </p>
+      <p className="mt-2 flex gap-1.5 text-xs text-fg-muted">
+        <Hourglass className="mt-0.5 size-3 shrink-0" aria-hidden />
+        <span>
+          <span className="sr-only">Stays live: </span>
+          {lifetime.charAt(0).toUpperCase() + lifetime.slice(1)}
+        </span>
+      </p>
+      {avoided ? (
+        <p className="mt-1 flex gap-1.5 text-xs font-medium text-accent-ink">
+          <Route className="mt-0.5 size-3 shrink-0" aria-hidden />
+          Your Calmest route avoids it
+        </p>
+      ) : (
+        <p className="mt-1 flex gap-1.5 text-xs text-fg-subtle">
+          <Users className="mt-0.5 size-3 shrink-0" aria-hidden />
+          Verified by {MAP_MIN_RIDERS}+ riders · the warning is free for everyone
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function StreetMapCanvas({
   streets,
@@ -54,12 +114,16 @@ export default function StreetMapCanvas({
   hour,
   hotspots,
   potholes,
+  flags,
+  calmestAvoids,
   showHotspots,
   showPotholes,
+  showFlags,
   bikeOnly,
   selectedId,
   onSelect,
   focus,
+  flagFocus,
   showControls = true,
   label,
 }: StreetMapCanvasProps) {
@@ -86,6 +150,13 @@ export default function StreetMapCanvas({
     }),
     [potholes],
   );
+  const flagData = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: flags.map((h) => ({ type: "Feature" as const, properties: { id: h.id, color: HAZARD_META[h.kind].color }, geometry: { type: "Point" as const, coordinates: h.coordinates } })),
+    }),
+    [flags],
+  );
 
   // Deep links open the map already framed on the street.
   const initialView = useRef(
@@ -104,7 +175,21 @@ export default function StreetMapCanvas({
     map.fitBounds(boundsOf(s.coordinates), { ...FOCUS_OPTIONS, duration: reduceMotion ? 0 : 900 });
   }, [focus, byId, reduceMotion]);
 
-  const interactive = useMemo(() => ["streets", ...(showHotspots ? ["hotspots"] : []), ...(showPotholes ? ["potholes"] : [])], [showHotspots, showPotholes]);
+  const handledFlag = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (!flagFocus || flagFocus.nonce === handledFlag.current) return;
+    const item = flags.find((h) => h.id === flagFocus.id);
+    const map = mapRef.current;
+    if (!item || !map) return;
+    handledFlag.current = flagFocus.nonce;
+    map.easeTo({ center: item.coordinates, zoom: Math.max(map.getZoom(), 15), duration: reduceMotion ? 0 : 900 });
+    setPopup({ kind: "flag", item });
+  }, [flagFocus, flags, reduceMotion]);
+
+  const interactive = useMemo(
+    () => ["streets", ...(showHotspots ? ["hotspots"] : []), ...(showPotholes ? ["potholes"] : []), ...(showFlags ? ["flags-hit", "flags"] : [])],
+    [showHotspots, showPotholes, showFlags],
+  );
 
   const onMove = (e: MapLayerMouseEvent) => {
     const f = e.features?.[0];
@@ -131,6 +216,11 @@ export default function StreetMapCanvas({
       setPopup(item ? { kind: "pothole", item } : null);
       return;
     }
+    if (f.layer.id === "flags" || f.layer.id === "flags-hit") {
+      const item = flags.find((h) => h.id === id);
+      setPopup(item ? { kind: "flag", item } : null);
+      return;
+    }
     setPopup(null);
     onSelect(id);
   };
@@ -139,6 +229,12 @@ export default function StreetMapCanvas({
   const color = scoreColorExpression(["get", hourProp(metric, hour)], theme) as unknown as ExpressionSpecification;
   const filter = bikeOnly ? BIKE_ONLY : ALL;
   const hovered = hover ? byId.get(hover.id) : undefined;
+  // a popup closes with its layer (and stays closed when the layer comes back)
+  const layerOn = { hotspot: showHotspots, pothole: showPotholes, flag: showFlags };
+  const openPopup = popup && layerOn[popup.kind] ? popup : null;
+  useEffect(() => {
+    setPopup((p) => (p && !{ hotspot: showHotspots, pothole: showPotholes, flag: showFlags }[p.kind] ? null : p));
+  }, [showHotspots, showPotholes, showFlags]);
 
   return (
     <div className="relative size-full">
@@ -198,34 +294,56 @@ export default function StreetMapCanvas({
             <Layer id="hotspots-core" type="circle" paint={{ "circle-radius": 2.5, "circle-color": theme === "dark" ? "#ffffff" : "#0b1220" }} />
           </Source>
         ) : null}
-        {popup ? (
+        {showFlags ? (
+          <Source id="flags" type="geojson" data={flagData}>
+            {/* invisible, wider hit area: a slightly-off tap should open the flag, not the street underneath */}
+            <Layer id="flags-hit" type="circle" paint={{ "circle-radius": 16, "circle-opacity": 0 }} />
+            <Layer
+              id="flags"
+              type="circle"
+              paint={{
+                "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 5, 16, 10],
+                "circle-color": ["get", "color"],
+                "circle-stroke-color": FLAG_STROKE,
+                "circle-stroke-width": 2,
+              }}
+            />
+            {/* the dark core tells a rider flag apart from a measured pothole of the same colour */}
+            <Layer id="flags-core" type="circle" paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 1.5, 16, 3], "circle-color": FLAG_STROKE }} />
+          </Source>
+        ) : null}
+        {openPopup ? (
           <Popup
-            longitude={popup.item.coordinates[0]}
-            latitude={popup.item.coordinates[1]}
+            longitude={openPopup.item.coordinates[0]}
+            latitude={openPopup.item.coordinates[1]}
             anchor="bottom"
-            offset={popup.kind === "hotspot" ? 20 : 12}
+            offset={openPopup.kind === "hotspot" ? 20 : openPopup.kind === "flag" ? 14 : 12}
             closeButton={false}
+            // the map's own click handler opens, swaps and closes popups; letting the popup close itself too raced with it
+            closeOnClick={false}
             onClose={() => setPopup(null)}
             maxWidth="260px"
           >
-            {popup.kind === "hotspot" ? (
+            {openPopup.kind === "flag" ? (
+              <FlagPopup item={openPopup.item} avoided={calmestAvoids.has(openPopup.item.id)} />
+            ) : openPopup.kind === "hotspot" ? (
               <div>
                 <p className="label-mono text-[10px] text-accent-ink">Hard-brake hotspot</p>
-                <p className="mt-1 text-[13px] leading-5 font-semibold">{popup.item.label}</p>
+                <p className="mt-1 text-[13px] leading-5 font-semibold">{openPopup.item.label}</p>
                 <p className="mt-1 text-xs text-fg-muted">
-                  <span className="font-num font-semibold text-fg">{popup.item.hardBrakesWeek}</span> hard brakes this week · peak {hourLabel(popup.item.peakHour)}
+                  <span className="font-num font-semibold text-fg">{openPopup.item.hardBrakesWeek}</span> hard brakes this week · peak {hourLabel(openPopup.item.peakHour)}
                 </p>
                 <p className="text-xs text-fg-muted">
-                  Avg. deceleration <span className="font-num font-semibold text-fg">{popup.item.avgDecel.toFixed(1)}</span> m/s²
+                  Avg. deceleration <span className="font-num font-semibold text-fg">{openPopup.item.avgDecel.toFixed(1)}</span> m/s²
                 </p>
               </div>
             ) : (
               <div>
-                <p className="label-mono text-[10px] text-mid">{SEVERITY[popup.item.severity]} pothole</p>
-                <p className="mt-1 text-[13px] leading-5 font-semibold">{popup.item.street}</p>
+                <p className="label-mono text-[10px] text-mid">{SEVERITY[openPopup.item.severity]} pothole</p>
+                <p className="mt-1 text-[13px] leading-5 font-semibold">{openPopup.item.street}</p>
                 <p className="mt-1 text-xs text-fg-muted">
-                  Confirmed by <span className="font-num font-semibold text-fg">{popup.item.confirmations}</span> {plural(popup.item.confirmations, "rider")} · first felt{" "}
-                  {formatDay(`${popup.item.firstSeen}T12:00:00Z`, { day: "numeric", month: "short" })}
+                  Confirmed by <span className="font-num font-semibold text-fg">{openPopup.item.confirmations}</span> {plural(openPopup.item.confirmations, "rider")} · first felt{" "}
+                  {formatDay(`${openPopup.item.firstSeen}T12:00:00Z`, { day: "numeric", month: "short" })}
                 </p>
               </div>
             )}

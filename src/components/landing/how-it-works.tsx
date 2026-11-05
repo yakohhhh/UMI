@@ -1,14 +1,15 @@
 "use client";
 
-import { Bike, BarChart3, Paperclip, RefreshCcw, Route } from "lucide-react";
+import { Bike, BarChart3, Flag, Paperclip, RefreshCcw, Route } from "lucide-react";
 import { useRef } from "react";
 import { gsap, useGSAP } from "./motion";
 
 const STEPS = [
   { icon: Paperclip, title: "Clip on", body: "Bike, scooter, bag strap or running belt. Tool-free mount, ten seconds." },
-  { icon: Bike, title: "Ride or run", body: "UMI measures quietly. No phone needed on the way, no button to press." },
-  { icon: RefreshCcw, title: "Auto-sync", body: "Bluetooth sync when you're home or at work. Sound is reduced to dB on the Clip." },
-  { icon: BarChart3, title: "Ride report", body: "Comfort, safety, air and noise, with the moments that mattered." },
+  { icon: Bike, title: "Ride or run", body: "UMI measures quietly. No phone needed on the way, so it stays in your pocket." },
+  { icon: Flag, title: "Flag it", body: "Roadworks ahead? Press the Clip to drop a flag. With voice keywords on, hold it and say what it is." },
+  { icon: RefreshCcw, title: "Auto-sync", body: "Bluetooth sync when you're home or at work. Audio never leaves the Clip: from the mic, only dB levels and flag keywords do." },
+  { icon: BarChart3, title: "Ride report", body: "Comfort, safety, air and noise, plus one or two quick questions once you've stopped." },
   { icon: Route, title: "Better route", body: "Tomorrow's ride, tuned to what you care about: fastest, calmest or cleanest." },
 ];
 
@@ -48,10 +49,10 @@ export function HowItWorks() {
           From your morning ride to a better map.
         </h2>
         <div className="hiw-list relative mt-16">
-          <div aria-hidden className="absolute top-0 bottom-0 left-[27px] w-[2px] bg-white/8 lg:top-[27px] lg:right-[10%] lg:bottom-auto lg:left-[10%] lg:h-[2px] lg:w-auto">
+          <div aria-hidden className="absolute top-0 bottom-0 left-[27px] w-[2px] bg-white/8 lg:top-[27px] lg:right-[8%] lg:bottom-auto lg:left-[8%] lg:h-[2px] lg:w-auto">
             <div className="hiw-line size-full origin-top bg-signal lg:origin-left" />
           </div>
-          <ol className="relative grid gap-10 lg:grid-cols-5 lg:gap-6">
+          <ol className="relative grid gap-10 lg:grid-cols-6 lg:gap-6">
           {STEPS.map((s, i) => (
             <li key={s.title} className="hiw-step relative flex gap-5 lg:flex-col lg:items-center lg:gap-6 lg:text-center">
               <div className="hiw-node relative z-10 flex size-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-asphalt-850">

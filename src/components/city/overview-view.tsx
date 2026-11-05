@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ArrowUpRight, CircleAlert, CircleCheck, TriangleAlert, type LucideIcon } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CircleAlert, CircleCheck, Flag, TriangleAlert, type LucideIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -27,6 +27,12 @@ const ALERT_ICON: Record<CityAlert["tone"], { icon: LucideIcon; className: strin
   mid: { icon: CircleAlert, className: "bg-mid-fill/20 text-mid" },
   good: { icon: CircleCheck, className: "bg-good-fill/15 text-good" },
 };
+
+/** Signals with their own icon, so rider flags don't look like another "rising" warning. */
+const ALERT_ID_ICON: Partial<Record<string, LucideIcon>> = { flagged: Flag };
+
+/** Columns at desktop width by number of signals, so none sits alone on a row. */
+const ALERT_COLS: Partial<Record<number, string>> = { 3: "xl:grid-cols-3", 5: "lg:grid-cols-3 xl:grid-cols-5" };
 
 export function OverviewView() {
   const { filters, toggleDistrict } = useCityFilters();
@@ -185,14 +191,15 @@ export function OverviewView() {
         </CardHeader>
         <CardContent>
           {data ? (
-            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <ul className={cn("grid grid-cols-1 gap-3 md:grid-cols-2", ALERT_COLS[data.alerts.length] ?? "xl:grid-cols-4")}>
               {data.alerts.map((a) => {
                 const tone = ALERT_ICON[a.tone];
+                const Icon = ALERT_ID_ICON[a.id] ?? tone.icon;
                 return (
                   <li key={a.id}>
                     <Link href={a.href} className="group flex h-full flex-col rounded-xl border border-line bg-surface-2/40 p-4 transition-colors hover:border-line-strong hover:bg-surface-2">
                       <span className={cn("flex size-8 items-center justify-center rounded-lg", tone.className)} aria-hidden>
-                        <tone.icon className="size-4" />
+                        <Icon className="size-4" />
                       </span>
                       <span className="mt-3 text-sm leading-snug font-semibold text-fg">{a.title}</span>
                       <span className="mt-1 flex-1 text-xs leading-5 text-fg-muted">{a.body}</span>

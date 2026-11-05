@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, Bike, CircleDot, Leaf, Navigation, Wind } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bike, CircleDot, Construction, Leaf, Navigation, Wind } from "lucide-react";
 import { forwardRef } from "react";
 import { BAND_COLORS, scoreBand } from "@/lib/score";
 import { phoneMap, rideMap } from "./data/geo";
@@ -89,13 +89,14 @@ export function RideReportScreen() {
         {ring(ride.scores.air, "Air")}
         {ring(ride.scores.noise, "Noise")}
       </div>
-      <ul className="mx-4 mt-3 space-y-1.5">
+      <ul className="mx-4 mt-3 space-y-1">
         {[
           { icon: AlertTriangle, t: "Hard brake", d: "07:59 · Diagonal × Sant Joan", c: "#ff5b1f" },
           { icon: CircleDot, t: "Pothole", d: "08:01 · Av. Diagonal", c: "#f5c542" },
+          { icon: Construction, t: "Roadworks", d: "08:02 · flagged by voice", c: "#f5c542" },
           { icon: Wind, t: "PM2.5 spike", d: "08:05 · Glòries · 34 µg/m³", c: "#ff5b1f" },
         ].map((e) => (
-          <li key={e.t} className="flex items-center gap-2 rounded-xl bg-asphalt-800/70 px-2.5 py-2">
+          <li key={e.t} className="flex items-center gap-2 rounded-xl bg-asphalt-800/70 px-2.5 py-1.5">
             <e.icon className="size-3.5" style={{ color: e.c }} />
             <span className="text-[11px] font-medium text-paper">{e.t}</span>
             <span className="ml-auto text-[9.5px] text-asphalt-300">{e.d}</span>
