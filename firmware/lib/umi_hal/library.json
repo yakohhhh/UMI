@@ -1,0 +1,21 @@
+{
+  "name": "umi_hal",
+  "version": "1.0.0",
+  "description": "Hardware interfaces of the UMI Clip: small vtables implemented by real (umi_drivers) and simulated (umi_sim) parts.",
+  "frameworks": "*",
+  "platforms": "*",
+  "dependencies": [
+    {
+      "name": "umi_protocol"
+    }
+  ],
+  "build": {
+    "flags": [
+      "-Wall",
+      "-Wextra",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Werror"
+    ]
+  }
+}

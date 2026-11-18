@@ -1,0 +1,31 @@
+{
+  "name": "umi_sim",
+  "version": "1.0.0",
+  "description": "Simulated parts of the UMI Clip, fed by a SIL scenario (protocol/sil-scenario.md), and the host's software flag signer.",
+  "frameworks": "*",
+  "platforms": "*",
+  "dependencies": [
+    {
+      "name": "umi_hal"
+    },
+    {
+      "name": "umi_protocol"
+    },
+    {
+      "name": "umi_core"
+    },
+    {
+      "name": "umi_drivers"
+    }
+  ],
+  "build": {
+    "flags": [
+      "-Wall",
+      "-Wextra",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Werror"
+    ],
+    "extraScript": "select_sources.py"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "umi_drivers",
+  "version": "1.0.0",
+  "description": "Drivers for the parts of the UMI Clip: pure-C frame parsers (host and target) and ESP-IDF glue (target only).",
+  "frameworks": "*",
+  "platforms": "*",
+  "dependencies": [
+    {
+      "name": "umi_hal"
+    },
+    {
+      "name": "umi_protocol"
+    }
+  ],
+  "build": {
+    "extraScript": "select_sources.py",
+    "flags": [
+      "-Wall",
+      "-Wextra",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Werror"
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "umi_core",
+  "version": "1.0.0",
+  "description": "Pure C11 logic of the UMI Clip: detectors, button gestures, flags, feedback, SPL, recorder, warn-ahead. No ESP-IDF include.",
+  "frameworks": "*",
+  "platforms": "*",
+  "dependencies": [
+    {
+      "name": "umi_hal"
+    },
+    {
+      "name": "umi_protocol"
+    }
+  ],
+  "build": {
+    "flags": [
+      "-Wall",
+      "-Wextra",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Werror"
+    ]
+  }
+}
