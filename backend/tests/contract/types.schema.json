@@ -1735,7 +1735,7 @@
           "$ref": "#/definitions/RideEventType"
         },
         "value": {
-          "description": "m/s² for brakes, m/s² peak for potholes, µg/m³ for PM2.5, dB(A) for noise.",
+          "description": "m/s² for brakes (mean deceleration), m/s² for potholes (1 s vibration RMS), µg/m³ for PM2.5, dB(A) for noise.",
           "type": "number"
         }
       },
