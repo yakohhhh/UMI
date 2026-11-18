@@ -59,7 +59,7 @@ export interface RideEvent {
   type: RideEventType;
   sampleIndex: number;
   coordinates: LngLat;
-  /** m/s² for brakes, m/s² peak for potholes, µg/m³ for PM2.5, dB(A) for noise. */
+  /** m/s² for brakes (mean deceleration), m/s² for potholes (1 s vibration RMS), µg/m³ for PM2.5, dB(A) for noise. */
   value: number;
   time: string; // HH:mm, Europe/Madrid
   street: string | null;

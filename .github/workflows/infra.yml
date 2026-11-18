@@ -1,0 +1,73 @@
+name: Infra
+
+# The compose stack on Postgres: the only place the images, the migrations on
+# Postgres and concurrent ingest are exercised (the Python suites use SQLite).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - "backend/**"
+      - "simulator/**"
+      - "protocol/python/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "src/lib/mock/data/**"
+      - ".github/workflows/infra.yml"
+  pull_request:
+    paths:
+      - "infra/**"
+      - "backend/**"
+      - "simulator/**"
+      - "protocol/python/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "src/lib/mock/data/**"
+      - ".github/workflows/infra.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  stack:
+    name: Compose stack with a simulated fleet
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      COMPOSE_FILE: infra/docker-compose.yml
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compose file is valid
+        run: docker compose --profile sim config --quiet
+      - name: Build the images
+        run: docker compose --profile sim build
+      - name: Start Postgres and the API (migrated)
+        run: docker compose up --detach --wait
+      - name: Seed, then upload a simulated fleet
+        run: docker compose run --rm sim
+      - name: Again; the seed is idempotent and uploads are deduplicated
+        run: docker compose run --rm sim
+      - name: The API serves from Postgres
+        run: |
+          for path in /readyz /v1/feed /v1/hazards "/v1/city/overview?period=30d&mode=all" "/v1/city/hazards?period=30d&mode=all"; do
+            curl --fail --silent --show-error --output /dev/null "http://127.0.0.1:8000$path"
+          done
+      # Uploads are retried on 5xx, so a server error would otherwise pass unnoticed.
+      - name: No server errors
+        run: |
+          if docker compose logs api | grep -E '" 5[0-9]{2} '; then
+            echo "::error::The API answered 5xx (log above)."
+            exit 1
+          fi
+      - name: Logs
+        if: failure()
+        run: docker compose --profile sim logs
+      - name: Tear down
+        if: always()
+        run: docker compose --profile sim down --volumes

@@ -1,0 +1,2161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ActivityDetail": {
+      "additionalProperties": false,
+      "properties": {
+        "athleteId": {
+          "type": "string"
+        },
+        "avgSpeedKmh": {
+          "type": "number"
+        },
+        "comments": {
+          "type": "number"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "distanceM": {
+          "type": "number"
+        },
+        "durationS": {
+          "type": "number"
+        },
+        "elevationGainM": {
+          "type": "number"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/definitions/RideEvent"
+          },
+          "type": "array"
+        },
+        "featured": {
+          "type": "boolean"
+        },
+        "flags": {
+          "items": {
+            "$ref": "#/definitions/RideFlag"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kudoedBy": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kudos": {
+          "type": "number"
+        },
+        "maxSpeedKmh": {
+          "type": "number"
+        },
+        "movingTimeS": {
+          "type": "number"
+        },
+        "place": {
+          "description": "Human label for where the activity happened, e.g. \"Gràcia → 22@\".",
+          "type": "string"
+        },
+        "preview": {
+          "description": "Simplified trace for thumbnails.",
+          "items": {
+            "$ref": "#/definitions/LngLat"
+          },
+          "type": "array"
+        },
+        "route": {
+          "items": {
+            "$ref": "#/definitions/LngLat"
+          },
+          "type": "array"
+        },
+        "samples": {
+          "items": {
+            "$ref": "#/definitions/ActivitySample"
+          },
+          "type": "array"
+        },
+        "scores": {
+          "$ref": "#/definitions/Scores"
+        },
+        "segments": {
+          "items": {
+            "$ref": "#/definitions/ActivitySegment"
+          },
+          "type": "array"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ActivityType"
+        },
+        "weather": {
+          "additionalProperties": false,
+          "properties": {
+            "condition": {
+              "type": "string"
+            },
+            "tempC": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "tempC",
+            "condition"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "athleteId",
+        "avgSpeedKmh",
+        "comments",
+        "description",
+        "distanceM",
+        "durationS",
+        "elevationGainM",
+        "events",
+        "featured",
+        "flags",
+        "id",
+        "kudoedBy",
+        "kudos",
+        "maxSpeedKmh",
+        "movingTimeS",
+        "place",
+        "preview",
+        "route",
+        "samples",
+        "scores",
+        "segments",
+        "startedAt",
+        "title",
+        "type",
+        "weather"
+      ],
+      "type": "object"
+    },
+    "ActivitySample": {
+      "description": "[t (s), distance (m), speed (km/h), vibration (m/s² RMS), PM2.5 (µg/m³), noise (dB), route index]",
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 7,
+      "minItems": 7,
+      "type": "array"
+    },
+    "ActivitySegment": {
+      "additionalProperties": false,
+      "properties": {
+        "bikeLane": {
+          "type": "boolean"
+        },
+        "distanceM": {
+          "type": "number"
+        },
+        "from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        },
+        "segmentId": {
+          "type": "string"
+        },
+        "streetAverage": {
+          "type": "number"
+        },
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "segmentId",
+        "name",
+        "from",
+        "to",
+        "distanceM",
+        "score",
+        "streetAverage",
+        "bikeLane"
+      ],
+      "type": "object"
+    },
+    "ActivitySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "athleteId": {
+          "type": "string"
+        },
+        "avgSpeedKmh": {
+          "type": "number"
+        },
+        "comments": {
+          "type": "number"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "distanceM": {
+          "type": "number"
+        },
+        "durationS": {
+          "type": "number"
+        },
+        "elevationGainM": {
+          "type": "number"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/definitions/RideEvent"
+          },
+          "type": "array"
+        },
+        "featured": {
+          "type": "boolean"
+        },
+        "flags": {
+          "items": {
+            "$ref": "#/definitions/RideFlag"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kudoedBy": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kudos": {
+          "type": "number"
+        },
+        "maxSpeedKmh": {
+          "type": "number"
+        },
+        "movingTimeS": {
+          "type": "number"
+        },
+        "place": {
+          "description": "Human label for where the activity happened, e.g. \"Gràcia → 22@\".",
+          "type": "string"
+        },
+        "preview": {
+          "description": "Simplified trace for thumbnails.",
+          "items": {
+            "$ref": "#/definitions/LngLat"
+          },
+          "type": "array"
+        },
+        "scores": {
+          "$ref": "#/definitions/Scores"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ActivityType"
+        },
+        "weather": {
+          "additionalProperties": false,
+          "properties": {
+            "condition": {
+              "type": "string"
+            },
+            "tempC": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "tempC",
+            "condition"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "athleteId",
+        "type",
+        "title",
+        "place",
+        "description",
+        "startedAt",
+        "durationS",
+        "movingTimeS",
+        "distanceM",
+        "avgSpeedKmh",
+        "maxSpeedKmh",
+        "elevationGainM",
+        "scores",
+        "events",
+        "flags",
+        "preview",
+        "kudos",
+        "kudoedBy",
+        "comments",
+        "featured",
+        "weather"
+      ],
+      "type": "object"
+    },
+    "ActivityType": {
+      "enum": [
+        "ride",
+        "run"
+      ],
+      "type": "string"
+    },
+    "AirNoiseCell": {
+      "additionalProperties": false,
+      "properties": {
+        "db": {
+          "type": "number"
+        },
+        "pm25": {
+          "type": "number"
+        },
+        "rides": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "pm25",
+        "db",
+        "rides"
+      ],
+      "type": "object"
+    },
+    "ApiUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "daily": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "calls": {
+                "type": "number"
+              },
+              "day": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "day",
+              "calls"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "endpoints": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "method": {
+                "enum": [
+                  "GET",
+                  "POST"
+                ],
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "method",
+              "path",
+              "description"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "key": {
+          "type": "string"
+        },
+        "plan": {
+          "type": "string"
+        },
+        "quota": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "type": "number"
+            },
+            "resetsAt": {
+              "type": "string"
+            },
+            "used": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "used",
+            "limit",
+            "resetsAt"
+          ],
+          "type": "object"
+        },
+        "rateLimit": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "plan",
+        "quota",
+        "rateLimit",
+        "endpoints",
+        "daily"
+      ],
+      "type": "object"
+    },
+    "Athlete": {
+      "additionalProperties": false,
+      "properties": {
+        "age": {
+          "type": "number"
+        },
+        "city": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "initials": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "vehicle": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "firstName",
+        "initials",
+        "age",
+        "city",
+        "vehicle"
+      ],
+      "type": "object"
+    },
+    "BestWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "type": "string"
+        },
+        "metric": {
+          "$ref": "#/definitions/ScoreDimension"
+        },
+        "score": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string"
+        },
+        "window": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "window",
+        "detail",
+        "metric",
+        "score"
+      ],
+      "type": "object"
+    },
+    "BrakeCause": {
+      "description": "Why the rider braked, picked with one tap after the ride (never while moving). A cause never deletes the brake: it decides where the event counts (see CAUSE_BUCKET).",
+      "enum": [
+        "pedestrian",
+        "animal",
+        "vehicle",
+        "car_door",
+        "lane_blocked",
+        "surface",
+        "roadworks",
+        "junction",
+        "just_me"
+      ],
+      "type": "string"
+    },
+    "BrakeHotspot": {
+      "additionalProperties": false,
+      "properties": {
+        "answeredBy": {
+          "description": "Different riders who answered \"why did you brake?\" here (30 days).",
+          "type": "number"
+        },
+        "avgDecel": {
+          "type": "number"
+        },
+        "causes": {
+          "description": "Why riders brake here (shares, sum 1), only once 5+ different riders answered; small causes merged.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "cause": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/BrakeCause"
+                  },
+                  {
+                    "const": "other",
+                    "type": "string"
+                  }
+                ]
+              },
+              "share": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "cause",
+              "share"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/LngLat"
+        },
+        "hardBrakes30d": {
+          "type": "number"
+        },
+        "hardBrakesWeek": {
+          "type": "number"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "peakHour": {
+          "type": "number"
+        },
+        "trend": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "coordinates",
+        "hardBrakesWeek",
+        "hardBrakes30d",
+        "peakHour",
+        "trend",
+        "avgDecel"
+      ],
+      "type": "object"
+    },
+    "CauseBucket": {
+      "description": "infrastructure → the city's maintenance queue · behaviour → the junction's safety score · personal → left out of street data",
+      "enum": [
+        "infrastructure",
+        "behaviour",
+        "personal"
+      ],
+      "type": "string"
+    },
+    "CityAlert": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "tone": {
+          "enum": [
+            "good",
+            "mid",
+            "bad"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "tone",
+        "title",
+        "body",
+        "href"
+      ],
+      "type": "object"
+    },
+    "CityFilters": {
+      "additionalProperties": false,
+      "properties": {
+        "districts": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "mode": {
+          "$ref": "#/definitions/ModeFilter"
+        },
+        "period": {
+          "$ref": "#/definitions/Period"
+        }
+      },
+      "required": [
+        "period",
+        "districts",
+        "mode"
+      ],
+      "type": "object"
+    },
+    "CityHazard": {
+      "additionalProperties": false,
+      "description": "A hazard flagged by riders, published to City Insights once 5+ different riders flagged or confirmed it.",
+      "properties": {
+        "coordinates": {
+          "$ref": "#/definitions/LngLat"
+        },
+        "district": {
+          "type": "string"
+        },
+        "firstSeen": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/HazardKind"
+        },
+        "lastConfirmed": {
+          "type": "string"
+        },
+        "riders": {
+          "type": "number"
+        },
+        "status": {
+          "enum": [
+            "new",
+            "sent_to_iris",
+            "scheduled",
+            "fixed"
+          ],
+          "type": "string"
+        },
+        "street": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "street",
+        "district",
+        "coordinates",
+        "riders",
+        "firstSeen",
+        "lastConfirmed",
+        "status"
+      ],
+      "type": "object"
+    },
+    "CityOverview": {
+      "additionalProperties": false,
+      "properties": {
+        "alerts": {
+          "items": {
+            "$ref": "#/definitions/CityAlert"
+          },
+          "type": "array"
+        },
+        "districts": {
+          "items": {
+            "$ref": "#/definitions/DistrictStat"
+          },
+          "type": "array"
+        },
+        "generatedAt": {
+          "type": "string"
+        },
+        "kpis": {
+          "items": {
+            "$ref": "#/definitions/Kpi"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "kpis",
+        "districts",
+        "alerts",
+        "generatedAt"
+      ],
+      "type": "object"
+    },
+    "ClipStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "battery": {
+          "type": "number"
+        },
+        "connected": {
+          "type": "boolean"
+        },
+        "firmware": {
+          "type": "string"
+        },
+        "flagging": {
+          "additionalProperties": false,
+          "description": "The flag button: press = flag, hold = say one keyword, double press = undo.",
+          "properties": {
+            "chirp": {
+              "description": "Chirp + LED to confirm a flag (no phone, no earphones).",
+              "type": "boolean"
+            },
+            "languages": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "voice": {
+              "description": "Hold-to-speak keywords, recognised on the Clip; off by default.",
+              "type": "boolean"
+            },
+            "warnAhead": {
+              "description": "Two low chirps when the ride approaches a verified hazard.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "voice",
+            "languages",
+            "chirp",
+            "warnAhead"
+          ],
+          "type": "object"
+        },
+        "lastSync": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "sensors": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "detail": {
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "enabled",
+              "detail"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "serial": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "serial",
+        "battery",
+        "lastSync",
+        "firmware",
+        "connected",
+        "sensors",
+        "flagging"
+      ],
+      "type": "object"
+    },
+    "DistrictStat": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "db": {
+          "type": "number"
+        },
+        "hotspots": {
+          "type": "number"
+        },
+        "kmMeasured": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "pm25": {
+          "type": "number"
+        },
+        "ridesWeek": {
+          "type": "number"
+        },
+        "scores": {
+          "$ref": "#/definitions/Scores"
+        },
+        "surfaceIndex": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "code",
+        "scores",
+        "surfaceIndex",
+        "ridesWeek",
+        "kmMeasured",
+        "hotspots",
+        "pm25",
+        "db"
+      ],
+      "type": "object"
+    },
+    "ExposureDay": {
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "db": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "doseUgH": {
+          "type": "number"
+        },
+        "pm25": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rideMin": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "date",
+        "rideMin",
+        "pm25",
+        "db",
+        "doseUgH"
+      ],
+      "type": "object"
+    },
+    "ExposurePeriod": {
+      "additionalProperties": false,
+      "properties": {
+        "db": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "pm25": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "rideMin": {
+          "type": "number"
+        },
+        "start": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "start",
+        "pm25",
+        "db",
+        "rideMin"
+      ],
+      "type": "object"
+    },
+    "ExposureSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "contributors": {
+          "description": "Streets that contribute most to the rider's PM2.5 dose (last 90 days).",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "minutesWeek": {
+                "type": "number"
+              },
+              "pm25": {
+                "type": "number"
+              },
+              "share": {
+                "type": "number"
+              },
+              "street": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "street",
+              "share",
+              "pm25",
+              "minutesWeek"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "days": {
+          "items": {
+            "$ref": "#/definitions/ExposureDay"
+          },
+          "type": "array"
+        },
+        "insights": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "body": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "tone": {
+                "enum": [
+                  "good",
+                  "neutral",
+                  "watch"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "tone",
+              "title",
+              "body"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "monthly": {
+          "items": {
+            "$ref": "#/definitions/ExposurePeriod"
+          },
+          "type": "array"
+        },
+        "thresholds": {
+          "additionalProperties": false,
+          "properties": {
+            "eu2030Pm25": {
+              "type": "number"
+            },
+            "whoPm25Annual": {
+              "type": "number"
+            },
+            "whoPm25Daily": {
+              "type": "number"
+            },
+            "whoRoadNoise": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "whoPm25Annual",
+            "whoPm25Daily",
+            "eu2030Pm25",
+            "whoRoadNoise"
+          ],
+          "type": "object"
+        },
+        "totals": {
+          "additionalProperties": false,
+          "properties": {
+            "avgDb": {
+              "type": "number"
+            },
+            "avgPm25": {
+              "type": "number"
+            },
+            "changePct": {
+              "type": "number"
+            },
+            "dbChange": {
+              "type": "number"
+            },
+            "rideHours": {
+              "type": "number"
+            },
+            "ridingDays": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "avgPm25",
+            "avgDb",
+            "rideHours",
+            "changePct",
+            "ridingDays",
+            "dbChange"
+          ],
+          "type": "object"
+        },
+        "weekly": {
+          "items": {
+            "$ref": "#/definitions/ExposurePeriod"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "days",
+        "weekly",
+        "monthly",
+        "thresholds",
+        "insights",
+        "totals",
+        "contributors"
+      ],
+      "type": "object"
+    },
+    "FlagReport": {
+      "additionalProperties": false,
+      "properties": {
+        "activityId": {
+          "type": "string"
+        },
+        "confirmations": {
+          "description": "Other riders whose Clips confirmed it, with a press or the same sensor signature.",
+          "type": "number"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/LngLat"
+        },
+        "date": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HazardKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null = pressed without a keyword; the rider says what it was after the ride."
+        },
+        "proof": {
+          "description": "What the sensors saw after a fix or expiry, e.g. \"Comfort 52 → 81 since the repair\".",
+          "type": "string"
+        },
+        "ridersWarned": {
+          "description": "Riders whose route or map showed the hazard while it was live.",
+          "type": "number"
+        },
+        "sampleIndex": {
+          "type": "number"
+        },
+        "source": {
+          "$ref": "#/definitions/FlagSource"
+        },
+        "status": {
+          "$ref": "#/definitions/FlagStatus"
+        },
+        "street": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "time": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "activityId",
+        "confirmations",
+        "coordinates",
+        "date",
+        "id",
+        "kind",
+        "ridersWarned",
+        "sampleIndex",
+        "source",
+        "status",
+        "street",
+        "time"
+      ],
+      "type": "object"
+    },
+    "FlagSource": {
+      "description": "press = short press on the Clip button · voice = hold, then one keyword recognised on the Clip (no audio kept).",
+      "enum": [
+        "press",
+        "voice"
+      ],
+      "type": "string"
+    },
+    "FlagStatus": {
+      "description": "pending → only you so far · verified → 3+ riders, on everyone's map · sent_to_city → 5+ riders, in City Insights · fixed → the Clips measured the repair · expired → riders passed and it was gone.",
+      "enum": [
+        "pending",
+        "verified",
+        "sent_to_city",
+        "fixed",
+        "expired"
+      ],
+      "type": "string"
+    },
+    "HazardKind": {
+      "description": "What a flag is about: the keyword said on the Clip, or picked after the ride.",
+      "enum": [
+        "roadworks",
+        "pothole",
+        "blocked_lane",
+        "obstacle",
+        "danger"
+      ],
+      "type": "string"
+    },
+    "HourlyScores": {
+      "additionalProperties": false,
+      "properties": {
+        "air": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "comfort": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "noise": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "safety": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "comfort",
+        "safety",
+        "air",
+        "noise"
+      ],
+      "type": "object"
+    },
+    "Kpi": {
+      "additionalProperties": false,
+      "properties": {
+        "better": {
+          "enum": [
+            "up",
+            "down"
+          ],
+          "type": "string"
+        },
+        "delta": {
+          "type": "number"
+        },
+        "deltaLabel": {
+          "description": "What the delta compares against, e.g. \"vs last winter\" (default \"vs prev.\").",
+          "type": "string"
+        },
+        "deltaUnit": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "limitLabel": {
+          "type": "string"
+        },
+        "spark": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "value",
+        "unit",
+        "delta",
+        "deltaUnit",
+        "better",
+        "spark"
+      ],
+      "type": "object"
+    },
+    "LngLat": {
+      "description": "Domain models shared by the rider app and City Insights. Shapes mirror the planned REST API (FastAPI) so mocks can be swapped 1:1.",
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+    },
+    "MapMetric": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ScoreDimension"
+        },
+        {
+          "const": "overall",
+          "type": "string"
+        }
+      ]
+    },
+    "ModeFilter": {
+      "enum": [
+        "all",
+        "bike",
+        "run"
+      ],
+      "type": "string"
+    },
+    "MonthlyBrakes": {
+      "additionalProperties": false,
+      "properties": {
+        "hardBrakes": {
+          "type": "number"
+        },
+        "month": {
+          "type": "string"
+        },
+        "rides": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "month",
+        "hardBrakes",
+        "rides"
+      ],
+      "type": "object"
+    },
+    "Period": {
+      "enum": [
+        "7d",
+        "30d",
+        "90d",
+        "12m"
+      ],
+      "type": "string"
+    },
+    "PlannedRoute": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinates": {
+          "items": {
+            "$ref": "#/definitions/LngLat"
+          },
+          "type": "array"
+        },
+        "distanceM": {
+          "type": "number"
+        },
+        "durationMin": {
+          "type": "number"
+        },
+        "goal": {
+          "enum": [
+            "fastest",
+            "calmest",
+            "cleanest"
+          ],
+          "type": "string"
+        },
+        "highlight": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "scores": {
+          "$ref": "#/definitions/Scores"
+        },
+        "via": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "goal",
+        "label",
+        "durationMin",
+        "distanceM",
+        "scores",
+        "via",
+        "highlight",
+        "coordinates"
+      ],
+      "type": "object"
+    },
+    "Pothole": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmations": {
+          "type": "number"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/LngLat"
+        },
+        "firstSeen": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "segmentId": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "type": "string"
+        },
+        "street": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "segmentId",
+        "street",
+        "coordinates",
+        "confirmations",
+        "firstSeen",
+        "severity"
+      ],
+      "type": "object"
+    },
+    "ProfileStats": {
+      "additionalProperties": false,
+      "properties": {
+        "badges": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "earned": {
+                "type": "boolean"
+              },
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "progress": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "description",
+              "earned"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "clubs": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "challenge": {
+                "type": "string"
+              },
+              "goal": {
+                "type": "number"
+              },
+              "id": {
+                "type": "string"
+              },
+              "members": {
+                "type": "number"
+              },
+              "name": {
+                "type": "string"
+              },
+              "progress": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "challenge",
+              "progress",
+              "goal",
+              "unit",
+              "members"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "contributions": {
+          "additionalProperties": false,
+          "properties": {
+            "flags": {
+              "items": {
+                "$ref": "#/definitions/FlagReport"
+              },
+              "type": "array"
+            },
+            "impact": {
+              "additionalProperties": false,
+              "description": "Outcomes of the rider's flags and answers. Credit follows what happened, never the press itself.",
+              "properties": {
+                "causesGiven": {
+                  "type": "number"
+                },
+                "fixed": {
+                  "type": "number"
+                },
+                "ridersWarned": {
+                  "type": "number"
+                },
+                "verified": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "ridersWarned",
+                "verified",
+                "fixed",
+                "causesGiven"
+              ],
+              "type": "object"
+            },
+            "potholesConfirmed": {
+              "type": "number"
+            },
+            "segmentsFirst": {
+              "type": "number"
+            },
+            "streetsImproved": {
+              "type": "number"
+            },
+            "topStreets": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "passes": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "name",
+                  "passes"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "trust": {
+              "additionalProperties": false,
+              "description": "Private reliability (no leaderboard): rises with flags other riders verify and checks the sensors agree with.",
+              "properties": {
+                "level": {
+                  "type": "number"
+                },
+                "max": {
+                  "type": "number"
+                },
+                "next": {
+                  "type": "string"
+                },
+                "perks": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "level",
+                "max",
+                "next",
+                "perks"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "streetsImproved",
+            "potholesConfirmed",
+            "segmentsFirst",
+            "topStreets",
+            "impact",
+            "trust",
+            "flags"
+          ],
+          "type": "object"
+        },
+        "records": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "date": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "value",
+              "detail",
+              "date"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "totals": {
+          "additionalProperties": false,
+          "properties": {
+            "distanceKm": {
+              "type": "number"
+            },
+            "hours": {
+              "type": "number"
+            },
+            "rides": {
+              "type": "number"
+            },
+            "runs": {
+              "type": "number"
+            },
+            "since": {
+              "type": "string"
+            },
+            "streetsMapped": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "distanceKm",
+            "rides",
+            "runs",
+            "hours",
+            "streetsMapped",
+            "since"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "totals",
+        "records",
+        "badges",
+        "contributions",
+        "clubs"
+      ],
+      "type": "object"
+    },
+    "RideEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "ask": {
+          "description": "Hard brakes: one of the (at most 2) moments the app asks about after this ride.",
+          "type": "boolean"
+        },
+        "cause": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BrakeCause"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Hard brakes: the rider's answer, null while unanswered (then it counts at half weight)."
+        },
+        "coordinates": {
+          "$ref": "#/definitions/LngLat"
+        },
+        "id": {
+          "description": "Stable id, `${activityId}-e${index}`.",
+          "type": "string"
+        },
+        "sampleIndex": {
+          "type": "number"
+        },
+        "street": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "time": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/RideEventType"
+        },
+        "value": {
+          "description": "m/s² for brakes (mean deceleration), m/s² for potholes (1 s vibration RMS), µg/m³ for PM2.5, dB(A) for noise.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "sampleIndex",
+        "coordinates",
+        "value",
+        "time",
+        "street"
+      ],
+      "type": "object"
+    },
+    "RideEventType": {
+      "enum": [
+        "hard_brake",
+        "pothole",
+        "pm_spike",
+        "noise_peak"
+      ],
+      "type": "string"
+    },
+    "RideFlag": {
+      "additionalProperties": false,
+      "description": "A hazard flagged during the ride from the Clip itself: the press fixes where and when, the keyword (or a tap later) says what.",
+      "properties": {
+        "confirmations": {
+          "description": "Other riders whose Clips confirmed it, with a press or the same sensor signature.",
+          "type": "number"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/LngLat"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HazardKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null = pressed without a keyword; the rider says what it was after the ride."
+        },
+        "proof": {
+          "description": "What the sensors saw after a fix or expiry, e.g. \"Comfort 52 → 81 since the repair\".",
+          "type": "string"
+        },
+        "ridersWarned": {
+          "description": "Riders whose route or map showed the hazard while it was live.",
+          "type": "number"
+        },
+        "sampleIndex": {
+          "type": "number"
+        },
+        "source": {
+          "$ref": "#/definitions/FlagSource"
+        },
+        "status": {
+          "$ref": "#/definitions/FlagStatus"
+        },
+        "street": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "time": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "sampleIndex",
+        "coordinates",
+        "time",
+        "street",
+        "kind",
+        "source",
+        "status",
+        "confirmations",
+        "ridersWarned"
+      ],
+      "type": "object"
+    },
+    "RouteRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "departAt": {
+          "description": "\"HH:MM\", Europe/Madrid. Scores are forecast for that hour.",
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "via": {
+          "description": "Street segment the rider wants to pass through.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "SafetyData": {
+      "additionalProperties": false,
+      "properties": {
+        "hotspots": {
+          "items": {
+            "$ref": "#/definitions/BrakeHotspot"
+          },
+          "type": "array"
+        },
+        "monthly": {
+          "items": {
+            "$ref": "#/definitions/MonthlyBrakes"
+          },
+          "type": "array"
+        },
+        "totals": {
+          "additionalProperties": false,
+          "properties": {
+            "activeHotspots": {
+              "description": "Clusters with at least ACTIVE_HOTSPOT_PER_WEEK hard brakes a week.",
+              "type": "number"
+            },
+            "atHotspotsPct": {
+              "description": "Share of all hard brakes that happen at a hotspot.",
+              "type": "number"
+            },
+            "delta": {
+              "description": "Change of the per-1,000-rides rate vs the previous period, in %.",
+              "type": "number"
+            },
+            "hardBrakes": {
+              "type": "number"
+            },
+            "perThousandRides": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "hardBrakes",
+            "perThousandRides",
+            "delta",
+            "activeHotspots",
+            "atHotspotsPct"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "hotspots",
+        "monthly",
+        "totals"
+      ],
+      "type": "object"
+    },
+    "ScoreDimension": {
+      "enum": [
+        "comfort",
+        "safety",
+        "air",
+        "noise"
+      ],
+      "type": "string"
+    },
+    "Scores": {
+      "additionalProperties": false,
+      "properties": {
+        "air": {
+          "type": "number"
+        },
+        "comfort": {
+          "type": "number"
+        },
+        "noise": {
+          "type": "number"
+        },
+        "safety": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "comfort",
+        "safety",
+        "air",
+        "noise"
+      ],
+      "type": "object"
+    },
+    "StreetKind": {
+      "enum": [
+        "arterial",
+        "boulevard",
+        "street",
+        "green",
+        "promenade",
+        "seafront"
+      ],
+      "type": "string"
+    },
+    "StreetSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "bikeLane": {
+          "type": "boolean"
+        },
+        "coordinates": {
+          "items": {
+            "$ref": "#/definitions/LngLat"
+          },
+          "type": "array"
+        },
+        "db": {
+          "type": "number"
+        },
+        "district": {
+          "type": "string"
+        },
+        "from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hourly": {
+          "$ref": "#/definitions/HourlyScores"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/StreetKind"
+        },
+        "lengthM": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "passes30d": {
+          "type": "number"
+        },
+        "pm25": {
+          "description": "Typical PM2.5 (µg/m³) and noise (dB(A)) measured on the segment.",
+          "type": "number"
+        },
+        "scores": {
+          "$ref": "#/definitions/Scores"
+        },
+        "surface": {
+          "additionalProperties": false,
+          "properties": {
+            "potholes": {
+              "type": "number"
+            },
+            "vibRms": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "vibRms",
+            "potholes"
+          ],
+          "type": "object"
+        },
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trend": {
+          "description": "Change of the overall score vs the previous 30 days, in points.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "from",
+        "to",
+        "district",
+        "kind",
+        "bikeLane",
+        "lengthM",
+        "coordinates",
+        "scores",
+        "hourly",
+        "passes30d",
+        "trend",
+        "surface",
+        "pm25",
+        "db"
+      ],
+      "type": "object"
+    },
+    "SurfaceRankRow": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmedImpacts": {
+          "type": "number"
+        },
+        "district": {
+          "type": "string"
+        },
+        "from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lengthM": {
+          "type": "number"
+        },
+        "riders30d": {
+          "type": "number"
+        },
+        "segmentId": {
+          "type": "string"
+        },
+        "street": {
+          "type": "string"
+        },
+        "surfaceIndex": {
+          "type": "number"
+        },
+        "to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trend": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "segmentId",
+        "street",
+        "from",
+        "to",
+        "district",
+        "surfaceIndex",
+        "confirmedImpacts",
+        "riders30d",
+        "trend",
+        "lengthM"
+      ],
+      "type": "object"
+    },
+    "WeekStats": {
+      "additionalProperties": false,
+      "properties": {
+        "days": {
+          "description": "Distance per day, Monday first.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "isToday": {
+                "type": "boolean"
+              },
+              "km": {
+                "type": "number"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "km",
+              "isToday"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "distanceKm": {
+          "type": "number"
+        },
+        "goalKm": {
+          "type": "number"
+        },
+        "movingTimeS": {
+          "type": "number"
+        },
+        "rides": {
+          "type": "number"
+        },
+        "runs": {
+          "type": "number"
+        },
+        "streakDays": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "distanceKm",
+        "movingTimeS",
+        "rides",
+        "runs",
+        "goalKm",
+        "streakDays",
+        "days"
+      ],
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "umi_protocol",
+  "version": "1.0.0",
+  "description": "UMI session log codec (.umis), CRCs and the constants generated from protocol/constants.toml.",
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "flags": [
+      "-Wall",
+      "-Wextra",
+      "-Wshadow",
+      "-Wstrict-prototypes",
+      "-Werror"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/yakohhhh/UMI/security/advisories/new
+    about: Report it privately (flag forgery, key handling, data leaks), never in a public issue.
+  - name: Architecture and decisions
+    url: https://github.com/yakohhhh/UMI/tree/main/docs/architecture
+    about: How the components fit and why; read the ADRs before proposing to change one.

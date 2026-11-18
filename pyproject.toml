@@ -1,0 +1,39 @@
+# Python workspace (uv): the protocol codec, the backend and the simulator share
+# one lock file and import each other from source. The web app is in package.json.
+#
+#   uv sync --all-packages      # install everything
+#   uv run pytest               # run every Python test suite
+
+[tool.uv.workspace]
+members = ["protocol/python", "backend", "simulator"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.8",
+  "mypy>=1.13",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["protocol/python/tests", "backend/tests", "simulator/tests", "tests/e2e"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra --strict-markers --import-mode=importlib"
+markers = [
+  "e2e: end-to-end tests that need several components (and PlatformIO for the firmware SIL)",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["protocol/python/src/umi_protocol/constants.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PL", "PT"]
+ignore = ["PLR0913", "PLR2004", "PLR0911", "PLR0912", "PLR0915", "RUF001", "RUF002", "RUF003"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true

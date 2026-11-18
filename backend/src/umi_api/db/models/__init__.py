@@ -1,0 +1,87 @@
+"""Every table, imported here so `Base.metadata` is complete for Alembic and tests."""
+
+from umi_api.db.models.accounts import ApiKey, ApiUsageDay
+from umi_api.db.models.activities import (
+    Activity,
+    ActivityDetail,
+    ActivitySegment,
+    Flag,
+    RideEvent,
+    SegmentPass,
+    SessionUpload,
+)
+from umi_api.db.models.athletes import (
+    Athlete,
+    AthleteBadge,
+    AthleteProfile,
+    AthleteRecord,
+    Badge,
+    BestWindow,
+    Club,
+    ClubMembership,
+    Device,
+    Follow,
+)
+from umi_api.db.models.city import (
+    CityAirNoiseCell,
+    CityKpi,
+    CityMonthlyBrakes,
+    CityOutline,
+    DatasetSnapshot,
+    District,
+    DistrictStats,
+    Snapshot,
+)
+from umi_api.db.models.hazards import Hazard, HazardConfirmation
+from umi_api.db.models.riders import ExposureContributor, ExposureDay, PlannedRoute
+from umi_api.db.models.streets import (
+    BrakeHotspot,
+    HotspotCauseAnswer,
+    Pothole,
+    SegmentHourlyBaseline,
+    SegmentHourlyScore,
+    SegmentSurface,
+    StreetSegment,
+)
+
+__all__ = [
+    "Activity",
+    "ActivityDetail",
+    "ActivitySegment",
+    "ApiKey",
+    "ApiUsageDay",
+    "Athlete",
+    "AthleteBadge",
+    "AthleteProfile",
+    "AthleteRecord",
+    "Badge",
+    "BestWindow",
+    "BrakeHotspot",
+    "CityAirNoiseCell",
+    "CityKpi",
+    "CityMonthlyBrakes",
+    "CityOutline",
+    "Club",
+    "ClubMembership",
+    "DatasetSnapshot",
+    "Device",
+    "District",
+    "DistrictStats",
+    "ExposureContributor",
+    "ExposureDay",
+    "Flag",
+    "Follow",
+    "Hazard",
+    "HazardConfirmation",
+    "HotspotCauseAnswer",
+    "PlannedRoute",
+    "Pothole",
+    "RideEvent",
+    "SegmentHourlyBaseline",
+    "SegmentHourlyScore",
+    "SegmentPass",
+    "SegmentSurface",
+    "SessionUpload",
+    "Snapshot",
+    "StreetSegment",
+]

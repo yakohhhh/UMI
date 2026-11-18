@@ -1,0 +1,69 @@
+name: End to end
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "firmware/**"
+      - "protocol/**"
+      - "simulator/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "src/lib/mock/data/**"
+      - ".github/workflows/e2e.yml"
+  pull_request:
+    paths:
+      - "firmware/**"
+      - "protocol/**"
+      - "simulator/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "src/lib/mock/data/**"
+      - ".github/workflows/e2e.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  UV_NO_SYNC: "1"
+
+jobs:
+  sil:
+    name: Firmware SIL against the reference codec and the simulator
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio
+            firmware/.pio/libdeps
+          key: pio-host-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: pio-host-${{ runner.os }}-
+      - run: pip install "platformio>=6.2,<7"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --all-groups --locked
+      # Builds the SIL, runs every hand-made scenario through it, then decodes
+      # each log and verifies every flag signature with umi_protocol.
+      - name: Scenarios through the firmware, checked by the reference codec
+        run: firmware/scripts/run-sil.sh
+      # The e2e tests skip themselves when the SIL program is missing: make
+      # sure they ran instead of passing silently.
+      - name: Simulator and firmware record the same sessions
+        env:
+          UMI_SIL_PROGRAM: ${{ github.workspace }}/firmware/.pio/build/sil/program
+        run: |
+          test -x "$UMI_SIL_PROGRAM"
+          uv run pytest -m e2e

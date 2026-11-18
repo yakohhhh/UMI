@@ -1,3 +1,4 @@
+import { PRIVACY, REPORTS } from "./generated/protocol";
 import type { ActivitySummary, BrakeCause, CauseBucket, HazardKind } from "./types";
 
 /**
@@ -10,11 +11,11 @@ import type { ActivitySummary, BrakeCause, CauseBucket, HazardKind } from "./typ
  */
 
 /** Different riders before a flag shows on everyone's street map (same rule as potholes). */
-export const MAP_MIN_RIDERS = 3;
+export const MAP_MIN_RIDERS = PRIVACY.mapMinRiders;
 /** Different riders before a flag or a cause mix reaches City Insights (k-anonymity, like every city figure). */
-export const CITY_MIN_RIDERS = 5;
+export const CITY_MIN_RIDERS = PRIVACY.cityMinRiders;
 /** Moments the app asks about after a ride, at most. */
-export const MAX_QUESTIONS_PER_RIDE = 2;
+export const MAX_QUESTIONS_PER_RIDE = REPORTS.maxQuestionsPerRide;
 
 export const CAUSE_BUCKET: Record<BrakeCause, CauseBucket> = {
   pedestrian: "behaviour",
@@ -30,7 +31,7 @@ export const CAUSE_BUCKET: Record<BrakeCause, CauseBucket> = {
 
 /** Weight of a hard brake in a junction's safety score, by what we know about its cause. */
 export function brakeWeight(cause: BrakeCause | null | undefined) {
-  if (cause === undefined || cause === null) return 0.5;
+  if (cause === undefined || cause === null) return REPORTS.unansweredBrakeWeight;
   return CAUSE_BUCKET[cause] === "personal" ? 0 : 1;
 }
 

@@ -1,0 +1,90 @@
+# The backend on simulated hardware: Postgres, the API, the demo seed and a
+# fleet of simulated Clips uploading rides. Usage: infra/README.md.
+#
+#   docker compose -f infra/docker-compose.yml up -d --wait    # postgres + api
+#   docker compose -f infra/docker-compose.yml run --rm seed   # demo data
+#   docker compose -f infra/docker-compose.yml run --rm sim    # seed, then a small fleet
+
+name: umi
+
+x-api-build: &api-build
+  build:
+    context: ..
+    dockerfile: infra/docker/api.Dockerfile
+  image: umi-api:dev
+
+x-api-env: &api-env
+  # dev: simulated Clips are accepted and /v1/dev/devices pairs them.
+  UMI_ENV: dev
+  UMI_DATABASE_URL: postgresql+psycopg://umi:${UMI_POSTGRES_PASSWORD:-umi}@postgres:5432/umi
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: umi
+      POSTGRES_USER: umi
+      POSTGRES_PASSWORD: ${UMI_POSTGRES_PASSWORD:-umi}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # Loopback only: reachable from this machine (psql, an API run with uv), not the network.
+    ports:
+      - "127.0.0.1:${UMI_POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=umi --dbname=umi"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  api:
+    <<: *api-build
+    environment:
+      <<: *api-env
+      UMI_CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "127.0.0.1:${UMI_API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # The image migrates before it serves, so healthy also means migrated.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # One-shot: loads the web app's mock datasets. Idempotent; running it again
+  # moves the demo to the current week.
+  seed:
+    <<: *api-build
+    profiles: [seed, sim]
+    command: ["umi-api", "seed"]
+    environment: *api-env
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # One-shot: pairs simulated Clips and uploads their trimmed rides. Ingest
+  # needs the seeded street network, hence the seed first.
+  sim:
+    build:
+      context: ..
+      dockerfile: infra/docker/sim.Dockerfile
+    image: umi-sim:dev
+    profiles: [sim]
+    command: ["fleet", "--riders", "${UMI_SIM_RIDERS:-5}", "--days", "${UMI_SIM_DAYS:-3}", "--seed", "7"]
+    environment:
+      UMI_API_URL: http://api:8000
+    volumes:
+      - sim-keys:/var/lib/umi-sim
+    depends_on:
+      api:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-data:
+  sim-keys:

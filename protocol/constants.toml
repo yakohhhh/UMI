@@ -1,0 +1,170 @@
+# UMI shared constants — single source of truth.
+#
+# Every value that more than one component must agree on lives here: the Clip
+# firmware (C), the backend and the simulator (Python) and the web app (TS).
+# Never edit the generated files; edit this file and run:
+#
+#     python3 protocol/codegen/generate.py
+#
+# Outputs (committed, checked in CI):
+#   firmware/lib/umi_protocol/include/umi/protocol_gen.h
+#   protocol/python/src/umi_protocol/constants.py
+#   src/lib/generated/protocol.ts
+#
+# Sections become prefixes: [detection] hard_brake_mps2 → UMI_DETECTION_HARD_BRAKE_MPS2
+# in C, DETECTION_HARD_BRAKE_MPS2 in Python, DETECTION.hardBrakeMps2 in TS.
+# [enum.*] tables become C enums, Python IntEnums and TS const objects.
+
+[format]
+# Session log ("UMIS") — see protocol/README.md.
+magic = "UMIS"
+version = 1
+header_len = 32
+max_record_payload = 255
+file_extension = ".umis"
+media_type = "application/vnd.umi.session"
+# Written when a value is missing: an unsigned 16-bit measurement the sensor could
+# not provide (off or not ready), and an HDOP the GNSS did not report.
+not_available_u16 = 0xFFFF
+hdop_unknown = 255
+
+[geo]
+# Mean Earth radius (IUGG) for haversine distances. The privacy trim must give the
+# same result on every client, so nobody picks their own radius.
+earth_radius_m = 6371008.8
+
+[rates]
+imu_hz = 100
+gnss_hz = 1
+sample_hz = 1          # one SAMPLE record per second while recording
+air_period_s = 10      # one AIR record every 10 s (PM sensor duty cycle)
+status_period_s = 60
+
+[detection]
+# Hard brake: longitudinal deceleration above the threshold, sustained.
+hard_brake_mps2 = 3.0
+hard_brake_min_ms = 300
+hard_brake_refractory_ms = 3000
+# Pothole: 1 s vertical vibration RMS above the threshold with an impact peak.
+pothole_rms_mps2 = 4.0
+pothole_peak_mps2 = 12.0
+pothole_refractory_ms = 1500
+# Server-side events derived from 1 Hz samples.
+pm_spike_ugm3 = 25.0
+noise_peak_dba = 80.0
+# Recording starts after this much movement and stops after this long still.
+motion_start_speed_kmh = 6.0
+motion_start_s = 5
+auto_pause_s = 30
+auto_stop_s = 300
+
+[button]
+# One sealed button on the Clip: press = flag, hold = say one keyword, double press = undo.
+debounce_ms = 30
+hold_ms = 1000
+double_press_gap_ms = 350
+voice_window_ms = 4000
+# Keyword accepted only above this confidence (0–100); below, the flag is kept without a kind.
+keyword_min_confidence = 70
+
+[air]
+# Laser PM counters see droplets swollen by humidity as particles. The Clip corrects
+# PM2.5 to dry mass with the kappa-Köhler growth factor (Crilley et al. 2018):
+# dry = raw / (1 + kappa·RH / (1 − RH)), RH capped where the model diverges.
+# The simulator applies the inverse to write raw sensor frames. Kappa is site-specific:
+# calibrate against the Barcelona reference stations.
+pm25_humidity_kappa = 0.38
+humidity_cap_pct = 95.0
+
+[feedback]
+# Piezo chirps (Hz / ms). Never colour alone: the number of chirps carries the meaning.
+chirp_high_hz = 3200
+chirp_low_hz = 2000
+chirp_ms = 60
+chirp_gap_ms = 70
+warn_ahead_radius_m = 80
+warn_ahead_cooldown_s = 120
+
+[privacy]
+# Trimmed on the phone before upload; the backend refuses untrimmed sessions.
+trim_m = 200
+min_upload_distance_m = 500
+# k-anonymity thresholds (distinct riders).
+map_min_riders = 3
+city_min_riders = 5
+segment_hour_min_riders = 5
+cause_share_rounding = 0.1
+cause_share_min = 0.1
+
+[reports]
+max_questions_per_ride = 2
+unanswered_brake_weight = 0.5
+hazard_merge_radius_m = 30
+
+[signing]
+# Flags are signed on the Clip (ECDSA P-256, SHA-256, raw r||s).
+flag_context = "UMI-FLAG-v1"
+signature_len = 64
+
+[enum.record_type]
+sample = 1
+air = 2
+event = 3
+flag = 4
+flag_undo = 5
+status = 6
+time_sync = 7
+state = 8
+trim = 9
+end = 127
+
+[enum.header_flag]
+simulated = 1   # bit 0: produced with simulated sensor drivers
+trimmed = 2     # bit 1: re-encoded by the phone after the privacy trim
+
+[enum.activity]
+unknown = 0
+ride = 1
+run = 2
+
+[enum.fix]
+none = 0
+two_d = 2
+three_d = 3
+
+[enum.event_kind]
+hard_brake = 1
+pothole = 2
+
+[enum.flag_source]
+press = 1
+voice = 2
+
+[enum.hazard_kind]
+none = 0
+roadworks = 1
+pothole = 2
+blocked_lane = 3
+obstacle = 4
+danger = 5
+
+[enum.lang]
+none = 0
+ca = 1
+es = 2
+en = 3
+fr = 4
+
+[enum.recorder_state]
+recording = 1
+auto_pause = 2
+resume = 3
+
+[enum.status_flag]
+charging = 1
+low_battery = 2
+storage_low = 4
+
+[enum.sig_alg]
+none = 0          # development builds only; the backend rejects it in production
+ecdsa_p256 = 1

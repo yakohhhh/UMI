@@ -1,0 +1,57 @@
+name: Feature or improvement
+description: New behaviour, or a change to existing behaviour, that does not need the hardware.
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - firmware
+        - protocol
+        - backend
+        - simulator
+        - web
+        - mobile
+        - infra
+        - security
+        - privacy
+        - data
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who needs this and why. What happens today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What to build. Name the modules, endpoints, records or constants involved.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Observable acceptance criteria, ideally as tests.
+    validations:
+      required: true
+  - type: checkboxes
+    id: contracts
+    attributes:
+      label: Shared contracts it touches
+      options:
+        - label: "`protocol/constants.toml` or the wire format (`protocol/README.md`)"
+        - label: "The `/v1` API shapes (`src/lib/types.ts`)"
+        - label: An accepted ADR (`docs/architecture/adr`)
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy impact
+      description: Does it change what is collected, what leaves the Clip or the phone, the trim, the rider thresholds or retention? "None" is a valid answer.
+    validations:
+      required: true
