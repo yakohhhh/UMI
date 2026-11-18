@@ -5,7 +5,7 @@ Session logs (`.umis`) and their expected decoding (`.json`) that every UMI code
 | How each codec uses them | |
 | --- | --- |
 | Python (`umi_protocol`) | Regenerates every file in its tests and fails if one byte changes (`test_protocol_vectors.py`). |
-| C (`firmware/lib/umi_protocol`) | Encodes the inputs of `minimal` and `full` below and must produce `minimal.umis` and `full.umis` **byte for byte**; decodes every `.umis` to the values in its `.json`. |
+| C (`firmware/lib/umi_protocol`) | Encodes the inputs of `minimal` and `full` below and must produce `minimal.umis` and `full.umis` **byte for byte**; decodes every `.umis` to the values in its `.json` (`firmware/test/test_vectors`, `pio test -e native`). |
 | Phone (planned) | Decodes every file; its privacy trim of `ride.umis` must equal `ride.trimmed.umis` byte for byte. |
 | TypeScript (later) | Decodes every file to its `.json`. |
 
