@@ -15,6 +15,9 @@ next-env.d.ts
 # misc
 .DS_Store
 *.pem
+# test-only keys behind the golden vectors and the SIL scenarios (never used outside tests)
+!/protocol/vectors/test-key*.pem
+!/firmware/test/scenarios/*.pem
 *.tsbuildinfo
 
 # debug
@@ -29,3 +32,28 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+/backend/*.db
+/backend/*.db-journal
+*.sqlite3
+
+# firmware
+/firmware/.pio/
+/firmware/sdkconfig.*
+!/firmware/sdkconfig.defaults*
+/firmware/managed_components/
+/firmware/dependencies.lock
+
+# simulator output
+/simulator/out/
+.umi-sim/
+.hypothesis/

@@ -1,0 +1,12 @@
+{
+  "header": {"header_flags": 1, "device_id": "00000000c11b0001", "session_id": 1, "activity": 1, "hw_rev": 0, "fw_version": [0, 1, 0]},
+  "records": [
+    {"type": "time_sync", "t_ms": 0, "unix_ms": 1794988320000},
+    {"type": "sample", "t_ms": 1000, "lat_e7": 414029000, "lon_e7": 21564400, "speed_cms": 500, "heading_cdeg": 6500, "vib_mms2": 850, "noise_cdba": 6420, "hdop_d": 9, "fix": 3, "sats": 11},
+    {"type": "unknown", "type_id": 66, "t_ms": 1500, "payload": "dc050000667574757265"},
+    {"type": "sample", "t_ms": 2000, "lat_e7": 414029200, "lon_e7": 21565000, "speed_cms": 520, "heading_cdeg": 6500, "vib_mms2": 1210, "noise_cdba": 6590, "hdop_d": 9, "fix": 3, "sats": 12}
+  ],
+  "end": {"type": "end", "t_ms": 2000, "record_count": 4, "file_crc32": 2078124952},
+  "complete": true,
+  "issue": null
+}

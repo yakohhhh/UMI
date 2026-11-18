@@ -1,0 +1,26 @@
+{
+  "header": {"header_flags": 1, "device_id": "00000000c11b0001", "session_id": 1, "activity": 1, "hw_rev": 0, "fw_version": [0, 1, 0]},
+  "records": [
+    {"type": "time_sync", "t_ms": 0, "unix_ms": 1794988320000},
+    {"type": "state", "t_ms": 0, "state": 1},
+    {"type": "sample", "t_ms": 1000, "lat_e7": 0, "lon_e7": 0, "speed_cms": 0, "heading_cdeg": 0, "vib_mms2": 640, "noise_cdba": 6230, "hdop_d": 255, "fix": 0, "sats": 3},
+    {"type": "sample", "t_ms": 2000, "lat_e7": 414038900, "lon_e7": 21586100, "speed_cms": 480, "heading_cdeg": 6420, "vib_mms2": 910, "noise_cdba": 6380, "hdop_d": 12, "fix": 2, "sats": 6},
+    {"type": "air", "t_ms": 2000, "pm1_dug": 52, "pm25_dug": 87, "pm10_dug": 131, "temp_cc": -150, "rh_dpct": 712},
+    {"type": "event", "t_ms": 2400, "kind": 1, "value_mms2": 3850, "peak_mms2": 6120, "duration_ms": 640, "lat_e7": 414038900, "lon_e7": 21586100},
+    {"type": "sample", "t_ms": 3000, "lat_e7": 414039100, "lon_e7": 21586500, "speed_cms": 230, "heading_cdeg": 6380, "vib_mms2": 1130, "noise_cdba": 65535, "hdop_d": 9, "fix": 3, "sats": 9},
+    {"type": "flag", "t_ms": 3200, "seq": 0, "source": 1, "kind": 0, "confidence": 0, "lang": 0, "lat_e7": 414039100, "lon_e7": 21586500, "speed_cms": 230, "vib_mms2": 1130, "noise_cdba": 65535, "sig_alg": 1, "sig_len": 64, "signature": "79ecc0ed810a4617b4d5eb8ca6d7473a88d10d04382f3a7459f04cc1ac3607f33936ddc71dddb6ed098645057853eab98106ea09f222239540895de5bf75a16d"},
+    {"type": "event", "t_ms": 3600, "kind": 2, "value_mms2": 4630, "peak_mms2": 13900, "duration_ms": 120, "lat_e7": 414039100, "lon_e7": 21586500},
+    {"type": "sample", "t_ms": 4000, "lat_e7": 414039400, "lon_e7": 21587100, "speed_cms": 510, "heading_cdeg": 6410, "vib_mms2": 4630, "noise_cdba": 6710, "hdop_d": 8, "fix": 3, "sats": 11},
+    {"type": "flag", "t_ms": 4100, "seq": 1, "source": 2, "kind": 1, "confidence": 92, "lang": 1, "lat_e7": 414039400, "lon_e7": 21587100, "speed_cms": 510, "vib_mms2": 4630, "noise_cdba": 6710, "sig_alg": 1, "sig_len": 64, "signature": "21602908467b2df87e9cb5e65a61fedf3524de785a6fbe05b170f64b789849375368296f7ac656333457888ed1678ff23b04153ddcf5d75dfa515d14ee7d2173"},
+    {"type": "flag", "t_ms": 4800, "seq": 2, "source": 1, "kind": 0, "confidence": 0, "lang": 0, "lat_e7": 414039400, "lon_e7": 21587100, "speed_cms": 510, "vib_mms2": 4630, "noise_cdba": 6710, "sig_alg": 0, "sig_len": 0, "signature": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"},
+    {"type": "sample", "t_ms": 5000, "lat_e7": 414039700, "lon_e7": 21587700, "speed_cms": 505, "heading_cdeg": 6400, "vib_mms2": 1020, "noise_cdba": 6650, "hdop_d": 8, "fix": 3, "sats": 11},
+    {"type": "flag_undo", "t_ms": 5100, "seq": 2},
+    {"type": "status", "t_ms": 5100, "battery_pct": 18, "flags": 2, "battery_mv": 3610, "board_temp_cc": 3125, "free_kib": 5120},
+    {"type": "state", "t_ms": 36000, "state": 2},
+    {"type": "state", "t_ms": 41000, "state": 3},
+    {"type": "sample", "t_ms": 42000, "lat_e7": 414040800, "lon_e7": 21589000, "speed_cms": 150, "heading_cdeg": 6390, "vib_mms2": 700, "noise_cdba": 6120, "hdop_d": 9, "fix": 3, "sats": 12}
+  ],
+  "end": {"type": "end", "t_ms": 42000, "record_count": 18, "file_crc32": 994037405},
+  "complete": true,
+  "issue": null
+}
