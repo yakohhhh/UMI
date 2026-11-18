@@ -1,4 +1,4 @@
-# UMI — Urban Motion Intelligence
+# UMI - Urban Motion Intelligence
 
 A clip-on sensor for bikes, scooters and runners that scores every street for **comfort, safety, air and noise**, launching in Barcelona. Riders flag hazards hands-free with one button on the Clip; the city gets anonymised, aggregated street data.
 
