@@ -1,0 +1,22 @@
+# LF in the repository and in every checkout, Windows included: scripts must
+# run in containers and CI, and generated files are compared byte for byte.
+* text=auto eol=lf
+
+# Binary: never normalised, diffed or merged as text.
+*.umis binary
+*.woff2 binary
+
+# Generated: collapsed in pull request diffs. Review the source that produces
+# them (constants.toml, the generators, package.json, pyproject.toml) instead.
+uv.lock linguist-generated
+package-lock.json linguist-generated
+firmware/lib/umi_protocol/include/umi/protocol_gen.h linguist-generated
+protocol/python/src/umi_protocol/constants.py linguist-generated
+src/lib/generated/** linguist-generated
+protocol/vectors/*.json linguist-generated
+firmware/test/scenarios/*.scn linguist-generated
+backend/tests/parity/mock-responses.json linguist-generated
+src/lib/mock/data/*.json linguist-generated
+# Hand-placed, not generated.
+src/lib/mock/data/flags.json -linguist-generated
+backend/tests/contract/types.schema.json linguist-generated

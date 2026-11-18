@@ -1,0 +1,66 @@
+name: Bug
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - firmware
+        - protocol
+        - backend
+        - simulator
+        - web
+        - mobile
+        - infra
+        - security
+        - privacy
+        - data
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Include the exact error, status code or wrong value.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+      description: Point to the README, protocol section or ADR that says so, if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: Commands, scenario or seed, and inputs. Attach a `.umis` file if one is involved (simulated or trimmed only, never an untrimmed real ride).
+      placeholder: |
+        uv run umi-sim ride --from "Gràcia" --to "22@" --at 2026-11-18T07:50 --seed 7 --out ride.umis
+        uv run umi-protocol inspect ride.umis
+    validations:
+      required: true
+  - type: dropdown
+    id: hardware
+    attributes:
+      label: Where it runs
+      options:
+        - Simulated only (host tests, SIL, simulator)
+        - ESP32-S3 DevKitC
+        - Clip board
+        - Not hardware related
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      placeholder: main @ 1a2b3c4, firmware 0.1.0
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      render: shell

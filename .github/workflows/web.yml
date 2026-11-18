@@ -1,0 +1,72 @@
+name: Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.ts"
+      - "tsconfig.json"
+      - "postcss.config.mjs"
+      - "backend/tests/parity/**"
+      - "backend/tests/contract/**"
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.ts"
+      - "tsconfig.json"
+      - "postcss.config.mjs"
+      - "backend/tests/parity/**"
+      - "backend/tests/contract/**"
+      - ".github/workflows/web.yml"
+
+permissions:
+  contents: read
+
+# A new push to a pull request supersedes its running checks; runs on main are
+# kept so every merged commit gets a verdict.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Typecheck and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # The parity recorder below needs Node >= 22.15 (module.registerHooks).
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      # The backend's parity tests compare the API with what the mocks answer,
+      # recorded in this file: a change to the mocks or to api.ts must re-record it.
+      - name: Backend parity fixture matches the mocks
+        run: |
+          node --experimental-transform-types --no-warnings \
+            --import ./backend/tests/parity/hooks.mjs backend/tests/parity/generate.mjs
+          if ! git diff --exit-code -- backend/tests/parity/mock-responses.json; then
+            echo "::error file=backend/tests/parity/mock-responses.json::Stale: re-record it (backend/README.md, Tests and parity with the mocks) and run the backend tests."
+            exit 1
+          fi
+      # The backend's contract test validates every response against the JSON
+      # Schema of the web types: it must be regenerated when a type changes.
+      - name: Contract schema matches the web types
+        run: |
+          npm run contract:generate
+          if ! git diff --exit-code -- backend/tests/contract/types.schema.json; then
+            echo "::error file=backend/tests/contract/types.schema.json::Stale: run npm run contract:generate and the backend tests."
+            exit 1
+          fi

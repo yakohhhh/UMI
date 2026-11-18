@@ -1,0 +1,80 @@
+name: Hardware task
+description: Work that needs a DevKitC or the Clip board (bring-up, driver validation, calibration, power).
+labels: [hardware]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Parts, pins and the bring-up checklist are in `docs/hardware/assumptions.md`. Do in simulation whatever does not need the board (host tests, SIL scenarios) and say what is left.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - firmware
+        - protocol
+        - backend
+        - simulator
+        - web
+        - mobile
+        - infra
+        - security
+        - privacy
+        - data
+    validations:
+      required: true
+  - type: dropdown
+    id: board
+    attributes:
+      label: Board needed
+      options:
+        - ESP32-S3 DevKitC-1 N16R8
+        - Clip board
+        - Both
+    validations:
+      required: true
+  - type: dropdown
+    id: parts
+    attributes:
+      label: Parts involved
+      multiple: true
+      options:
+        - ESP32-S3 (SoC, flash, eFuse, secure boot)
+        - GNSS
+        - IMU
+        - PM2.5 sensor
+        - Microphone
+        - Temperature and humidity
+        - Battery and fuel gauge
+        - Flag button
+        - Buzzer
+        - LED
+        - BLE
+        - Enclosure and mount
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What must be true on the hardware, and why the simulation cannot show it.
+    validations:
+      required: true
+  - type: textarea
+    id: simulated
+    attributes:
+      label: Done in simulation so far
+      description: Drivers, parsers, host tests, scenarios; link them.
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Bring-up and acceptance
+      description: Steps and measurements, each with its expected value and tolerance.
+      placeholder: |
+        - [ ] `pio run -e clip -t upload` boots and logs the sensor self-test
+        - [ ] IMU at rest: |a| = 9.81 ± 0.1 m/s²
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks
+      description: Assumptions from docs/hardware/assumptions.md this could invalidate, and what would change if it does.

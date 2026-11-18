@@ -1,20 +1,44 @@
 # UMI — Urban Motion Intelligence
 
-First version of the UMI interface: a clip-on sensor for bikes, scooters and runners that scores every street for **comfort, safety, air and noise**, launching in Barcelona.
+A clip-on sensor for bikes, scooters and runners that scores every street for **comfort, safety, air and noise**, launching in Barcelona. Riders flag hazards hands-free with one button on the Clip; the city gets anonymised, aggregated street data.
 
-Three products live in this Next.js app:
+This repository holds the whole software, from the Clip's firmware to the web apps. The hardware has not arrived yet, so everything runs on simulated hardware: virtual Clips record the same session logs a real one will.
 
-| Route | What it is |
-| --- | --- |
-| `/` | Marketing landing, dark, scroll-driven (Lenis + GSAP ScrollTrigger) |
-| `/app` | Rider app: feed, ride reports, street map, routes, exposure, profile |
-| `/city` | City Insights, the "control room" for the Ajuntament: surface, safety, air & noise, API |
+| Component | Path | What it is |
+| --- | --- | --- |
+| Protocol | [`protocol/`](protocol/README.md) | The contract: the `.umis` session log, flag signatures, privacy trim, upload API, BLE GATT, shared constants generated into C, Python and TypeScript, golden vectors |
+| Firmware | [`firmware/`](firmware/README.md) | The Clip (ESP32-S3, C11, ESP-IDF via PlatformIO): detectors, button gestures, signed flags, session log, BLE. Runs on the host, a DevKitC or the board |
+| Simulator | [`simulator/`](simulator/README.md) | Fake hardware: virtual riders on the Barcelona street graph, virtual Clips, the phone's trim and upload, fleets |
+| Backend | [`backend/`](backend/README.md) | FastAPI service: session ingest, map matching, hazards, k-anonymous street scores, the `/v1` API |
+| Web | `src/` | Next.js: landing, rider app, City Insights (this README, from [Pages](#pages)) |
+| Infra | [`infra/`](infra/README.md), [`.github/`](.github/workflows) | Docker Compose stack (Postgres, API, simulated fleet), CI per component |
+| Docs | [`docs/architecture/`](docs/architecture/README.md) | System overview, where each privacy rule is enforced, decision records |
 
-All UI copy is in English. Everything runs on realistic local mocks, so the app works offline and without any backend.
+The mobile companion app (BLE transfer, privacy trim, post-ride questions) is next; until then the simulator plays the phone. The backlog is on the [project board](https://github.com/users/yakohhhh/projects/3); how we work is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Getting started
 
-Requirements: Node.js ≥ 20.9.
+| To work on | You need |
+| --- | --- |
+| Web | Node.js ≥ 20.9 |
+| Protocol, backend, simulator | [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 itself) |
+| Firmware | [PlatformIO Core](https://platformio.org/install/cli) 6 (it installs the ESP-IDF toolchain on the first build) |
+
+### The full stack on simulated hardware (5 minutes)
+
+```bash
+uv sync --all-packages --all-groups                          # Python workspace
+uv run umi-api migrate && uv run umi-api seed                # SQLite database with the demo data
+uv run umi-api serve                                         # API on http://127.0.0.1:8000
+uv run umi-sim fleet --riders 40 --days 14 --api http://127.0.0.1:8000   # in a second terminal
+npm install && NEXT_PUBLIC_API_URL=http://127.0.0.1:8000 npm run dev    # in a third: http://localhost:3000
+```
+
+The simulated riders pair their Clips, trim their rides and upload them; their flags become hazards on everyone's map once 3 riders agree and reach City Insights from 5. `docker compose -f infra/docker-compose.yml up -d --wait` runs the same backend on Postgres ([infra/README.md](infra/README.md)). The firmware's own logic runs on a laptop too: `cd firmware && pio test -e native && pio run -e sil` ([firmware/README.md](firmware/README.md)).
+
+### Web app only
+
+The web app runs on realistic local mocks, offline and without any backend:
 
 ```bash
 npm install
@@ -27,6 +51,11 @@ npm run dev        # http://localhost:3000
 | `npm run build` / `npm start` | Production build and server |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run mock:generate -- <path>` | Regenerate the mock datasets (see [Mock data](#mock-data)) |
+| `npm run protocol:generate` / `protocol:check` | Regenerate the shared constants from `protocol/constants.toml` / check they are current |
+| `npm run contract:generate` | Regenerate the JSON Schema of the web types the backend's contract test validates against |
+| `npm run api:seed` / `api:dev` | Migrate and seed the backend / serve it with reload |
+| `npm run sim:fleet` | Upload a simulated fleet to the local backend |
+| `npm run test:py` / `firmware:test` | Python test suites / firmware host tests |
 
 ### Windows
 
@@ -34,6 +63,7 @@ Everything runs natively on Windows (no WSL needed):
 
 1. Install Node.js LTS from [nodejs.org](https://nodejs.org) (or `winget install OpenJS.NodeJS.LTS`) and Git (`winget install Git.Git`), then open a new terminal.
 2. `git clone https://github.com/yakohhhh/UMI.git`, `cd UMI`, `npm install`, `npm run dev`.
+3. For the rest of the stack: `winget install astral-sh.uv` for the Python components, and `uv tool install platformio` for the firmware. Commands are the same as above; in PowerShell set variables with `$env:NEXT_PUBLIC_API_URL = "http://127.0.0.1:8000"` before `npm run dev`.
 
 If PowerShell answers *"running scripts is disabled on this system"*, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use `npm.cmd` instead of `npm`. Keep the project outside OneDrive-synced folders: syncing `node_modules` slows installs down and can lock files.
 
@@ -44,8 +74,10 @@ Copy `.env.example` to `.env.local` (`copy .env.example .env.local` on Windows).
 | Variable | Effect |
 | --- | --- |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Switches every map from the free CARTO styles to Mapbox `dark-v11` / `light-v11` (MapLibre renders them; `mapbox://` URLs are rewritten). |
-| `NEXT_PUBLIC_API_URL` | Base URL of a real UMI API (e.g. FastAPI). When set, `src/lib/api.ts` fetches it instead of the mocks; response shapes are the types in `src/lib/types.ts`. |
+| `NEXT_PUBLIC_API_URL` | Base URL of the UMI backend (`backend/`). When set, `src/lib/api.ts` fetches it instead of the mocks; response shapes are the types in `src/lib/types.ts`, checked by the backend's contract test. |
 | `NEXT_PUBLIC_SITE_URL` | Absolute URL used for metadata (Open Graph). |
+
+The backend's settings (`UMI_*`) are in [backend/README.md](backend/README.md).
 
 ## Pages
 
@@ -153,6 +185,13 @@ The first and last 200 m of every trip are trimmed on the phone before upload; a
 ## Project structure
 
 ```
+protocol/                 the contract: constants.toml (+ codegen/), session log spec, python/ reference codec, vectors/
+firmware/                 Clip firmware: lib/umi_hal, umi_core, umi_protocol, umi_drivers, umi_sim; src/ (ESP-IDF); sil/; test/
+simulator/                umi-sim: street graph, riders, sensors, virtual Clips, phone, fleets, SIL scenarios
+backend/                  umi-api: api/ schemas/ services/ domain/ repositories/ pipeline/ (ingest); migrations/; tests/
+tests/e2e/                firmware, simulator and backend together
+infra/                    docker-compose.yml and the API and simulator images
+docs/                     architecture/ (overview and ADRs), hardware/ (assumed parts, bring-up checklist), design notes
 src/
   app/                    routes (App Router), layouts, global styles, fonts
     app/                  rider app: feed, activities/[id], map, routes, exposure, profile
@@ -167,8 +206,9 @@ src/
   lib/
     api.ts                the only data entry point (mocks or NEXT_PUBLIC_API_URL)
     reports.ts            flag and brake-cause rules: rider thresholds, cause buckets, weights, lifetimes
+    generated/            constants generated from protocol/constants.toml
     types.ts score.ts format.ts geo.ts street-geojson.ts
-    mock/                 lazy JSON loaders and datasets; flags.ts = hand-placed flags, answers and city hazards
+    mock/                 lazy JSON loaders and datasets; data/flags.json = hand-placed flags, answers and city hazards
 scripts/generate-mock-data.mjs
 ```
 

@@ -1,0 +1,14 @@
+# Context is the repository root: send only what the simulator image needs.
+*
+!.python-version
+!pyproject.toml
+!uv.lock
+!protocol/python/pyproject.toml
+!protocol/python/src
+# Workspace member: its manifest is part of the lock, its code is not needed.
+!backend/pyproject.toml
+!simulator/pyproject.toml
+!simulator/src
+# The street network, places and hazards the virtual riders ride through.
+!src/lib/mock/data
+**/__pycache__

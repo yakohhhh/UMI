@@ -1,0 +1,16 @@
+# Context is the repository root: send only what the API image needs.
+*
+!.python-version
+!pyproject.toml
+!uv.lock
+!protocol/python/pyproject.toml
+!protocol/python/src
+!backend/pyproject.toml
+!backend/alembic.ini
+!backend/migrations
+!backend/src
+# Workspace member: its manifest is part of the lock, its code is not needed.
+!simulator/pyproject.toml
+# Read by `umi-api seed`.
+!src/lib/mock/data
+**/__pycache__

@@ -8,7 +8,15 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "mock:generate": "node scripts/generate-mock-data.mjs"
+    "mock:generate": "node scripts/generate-mock-data.mjs",
+    "protocol:generate": "uv run --no-project python protocol/codegen/generate.py",
+    "protocol:check": "uv run --no-project python protocol/codegen/generate.py --check",
+    "api:dev": "uv run --package umi-api umi-api serve --reload",
+    "api:seed": "uv run --package umi-api umi-api migrate && uv run --package umi-api umi-api seed",
+    "sim:fleet": "uv run --package umi-sim umi-sim fleet --riders 40 --days 14 --api http://127.0.0.1:8000",
+    "test:py": "uv run pytest",
+    "firmware:test": "pio test -d firmware -e native",
+    "contract:generate": "ts-json-schema-generator --path backend/tests/contract/web-types.ts --tsconfig tsconfig.json --type '*' --expose export --no-type-check -o backend/tests/contract/types.schema.json"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -42,6 +50,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "tailwindcss": "^4.1.0",
+    "ts-json-schema-generator": "^2.9.0",
     "typescript": "^5.6.0"
   },
   "engines": {

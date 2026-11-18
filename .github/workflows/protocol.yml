@@ -1,0 +1,41 @@
+name: Protocol
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "protocol/constants.toml"
+      - "protocol/codegen/**"
+      - "firmware/lib/umi_protocol/include/umi/protocol_gen.h"
+      - "protocol/python/src/umi_protocol/constants.py"
+      - "src/lib/generated/**"
+      - ".github/workflows/protocol.yml"
+  pull_request:
+    paths:
+      - "protocol/constants.toml"
+      - "protocol/codegen/**"
+      - "firmware/lib/umi_protocol/include/umi/protocol_gen.h"
+      - "protocol/python/src/umi_protocol/constants.py"
+      - "src/lib/generated/**"
+      - ".github/workflows/protocol.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  generated:
+    name: Generated constants are current
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+      # Standard library only: no project environment needed.
+      - name: C, Python and TypeScript constants match protocol/constants.toml
+        run: python protocol/codegen/generate.py --check

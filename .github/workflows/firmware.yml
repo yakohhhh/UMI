@@ -1,0 +1,80 @@
+name: Firmware
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "firmware/**"
+      # The native tests check the C codec against the golden vectors.
+      - "protocol/vectors/**"
+      - ".github/workflows/firmware.yml"
+  pull_request:
+    paths:
+      - "firmware/**"
+      # The native tests check the C codec against the golden vectors.
+      - "protocol/vectors/**"
+      - ".github/workflows/firmware.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  host:
+    name: Unit tests and SIL (host)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: firmware
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+      # Shared with e2e.yml: the native platform and the host's library deps.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.platformio
+            firmware/.pio/libdeps
+          key: pio-host-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: pio-host-${{ runner.os }}-
+      - run: pip install "platformio>=6.2,<7"
+      - name: Unit tests
+        run: pio test -e native
+      - name: SIL build
+        run: pio run -e sil
+      - name: Scenarios are reproducible from their generator
+        run: |
+          python test/scenarios/generate.py
+          git diff --exit-code -- test/scenarios
+
+  target:
+    name: ESP32-S3 build (${{ matrix.env }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [devkit, clip]
+    defaults:
+      run:
+        working-directory: firmware
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+      # ESP-IDF, its toolchains and its Python environment: several minutes to
+      # download and install on a cold runner.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.platformio
+          key: pio-esp32-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: pio-esp32-${{ runner.os }}-
+      - run: pip install "platformio>=6.2,<7"
+      - run: pio run -e ${{ matrix.env }}

@@ -1,0 +1,72 @@
+name: Python
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.py"
+      - "**/pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "protocol/**"
+      - "backend/**"
+      - "simulator/**"
+      # Seeded by the backend tests, ridden by the simulator.
+      - "src/lib/mock/data/**"
+      - ".github/workflows/python.yml"
+  pull_request:
+    paths:
+      - "**.py"
+      - "**/pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "protocol/**"
+      - "backend/**"
+      - "simulator/**"
+      - "src/lib/mock/data/**"
+      - ".github/workflows/python.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Every step runs in the environment `uv sync --locked` built; `uv run` must
+  # not resolve or install anything on its own.
+  UV_NO_SYNC: "1"
+
+jobs:
+  lint:
+    name: Format, lint and types
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --all-groups --locked
+      - run: uv run ruff format --check
+      - run: uv run ruff check --output-format=github
+      - name: Types (umi-protocol)
+        run: uv run mypy protocol/python/src
+      - name: Types (umi-api)
+        run: uv run mypy backend/src
+      - name: Types (umi-sim)
+        run: uv run mypy simulator/src
+
+  test:
+    name: Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --all-groups --locked
+      # e2e tests need the firmware SIL build: they run in e2e.yml.
+      - run: uv run pytest -m "not e2e"
