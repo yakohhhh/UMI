@@ -1,0 +1,38 @@
+[project]
+name = "umi-api"
+version = "0.1.0"
+description = "UMI backend: ingest, processing pipeline and the /v1 REST API."
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.20",
+    "alembic>=1.14",
+    "cryptography>=43",
+    "fastapi>=0.115",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.7",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "typer>=0.13",
+    "tzdata>=2026.6",
+    "umi-protocol",
+    "uvicorn[standard]>=0.32",
+]
+
+[project.scripts]
+umi-api = "umi_api.cli:app"
+
+[tool.uv.sources]
+umi-protocol = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28",
+    "jsonschema>=4.23",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/umi_api"]

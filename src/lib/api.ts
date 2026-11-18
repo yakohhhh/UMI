@@ -88,8 +88,14 @@ async function endpoint<T>(path: string, fallback: () => Promise<T> | T, latency
   return (await res.json()) as T;
 }
 
-async function send<T>(method: "POST" | "PUT", path: string, body: unknown, fallback: () => Promise<T> | T): Promise<T> {
-  if (!API_URL) return mock(fallback, [120, 260]);
+async function send<T>(
+  method: "POST" | "PUT",
+  path: string,
+  body: unknown,
+  fallback: () => Promise<T> | T,
+  latency: [number, number] = [120, 260],
+): Promise<T> {
+  if (!API_URL) return mock(fallback, latency);
   const res = await fetch(`${API_URL}${path}`, { method, headers: { accept: "application/json", "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!res.ok) throw new ApiError(`${method} ${path} failed`, res.status);
   return (await res.json()) as T;
@@ -311,8 +317,10 @@ function forecastRoute(r: PlannedRoute, hour: number): PlannedRoute {
 
 /** POST /v1/routes — Fastest / Calmest / Cleanest alternatives. */
 export function planRoutes(req: RouteRequest): Promise<PlannedRoute[]> {
-  return endpoint(
+  return send(
+    "POST",
     "/v1/routes",
+    req,
     async () => {
       if (isSimulatingEmpty()) return [];
       const hour = Number((req.departAt ?? "08:00").slice(0, 2));
@@ -492,6 +500,13 @@ function scaleKpi(k: Kpi, f: CityFilters): Kpi {
   return k;
 }
 
+/** City Insights filters as query parameters, serialised like the page URL (districts comma-separated). */
+function cityQuery(f: CityFilters) {
+  const q = new URLSearchParams({ period: f.period, mode: f.mode });
+  if (f.districts.length) q.set("districts", f.districts.join(","));
+  return q.toString();
+}
+
 function filterDistricts<T extends { district?: string; name?: string }>(rows: T[], f: CityFilters, key: "district" | "name" = "district") {
   if (!f.districts.length) return rows;
   return rows.filter((r) => f.districts.includes(String(r[key])));
@@ -557,7 +572,7 @@ function cityAlerts(airNoise: AirNoiseCell[][], hotspots: BrakeHotspot[], rankin
 
 /** GET /v1/city/overview?period=&districts=&mode= — KPIs aggregated over the selected districts. */
 export function getCityOverview(f: CityFilters): Promise<CityOverview> {
-  return endpoint(`/v1/city/overview?period=${f.period}&mode=${f.mode}`, async () => {
+  return endpoint(`/v1/city/overview?${cityQuery(f)}`, async () => {
     const [c, hotspots, ranking, districtOf, hazards] = await Promise.all([loadCity(), loadHotspots(), loadSurfaceRanking(), hotspotDistricts(), loadCityHazards()]);
     if (isSimulatingEmpty()) return { kpis: [], districts: [], alerts: [], generatedAt: shiftedGeneratedAt(c.generatedAt) };
     const active = hotspots.filter((h) => h.hardBrakesWeek >= ACTIVE_HOTSPOT_PER_WEEK);
@@ -593,7 +608,7 @@ export function getCityOverview(f: CityFilters): Promise<CityOverview> {
 
 /** GET /v1/city/surface/ranking */
 export function getSurfaceRanking(f: CityFilters): Promise<SurfaceRankRow[]> {
-  return endpoint(`/v1/city/surface/ranking?period=${f.period}`, async () => {
+  return endpoint(`/v1/city/surface/ranking?${cityQuery(f)}`, async () => {
     if (f.mode === "run" || isSimulatingEmpty()) return []; // runners don't measure surface vibration
     const rows = await loadSurfaceRanking();
     return filterDistricts(rows, f).map((r) => ({
@@ -656,7 +671,7 @@ async function once2<T>(key: string, load: () => Promise<T>): Promise<T> {
 
 /** GET /v1/city/safety */
 export function getCitySafety(f: CityFilters): Promise<SafetyData> {
-  return endpoint(`/v1/city/safety?period=${f.period}`, async () => {
+  return endpoint(`/v1/city/safety?${cityQuery(f)}`, async () => {
     const [hotspots, c, districtOf] = await Promise.all([loadHotspots(), loadCity(), hotspotDistricts()]);
     if (isSimulatingEmpty()) return { hotspots: [], monthly: [], totals: { hardBrakes: 0, perThousandRides: 0, delta: 0, activeHotspots: 0, atHotspotsPct: 0 } };
     const run = f.mode === "run";
@@ -718,7 +733,7 @@ const HAZARD_NOUN: Record<HazardKind, string> = { roadworks: "roadworks", pothol
 
 /** GET /v1/city/hazards?period=&districts= — rider flags published from CITY_MIN_RIDERS different riders, day-level dates, no reporters. */
 export function getCityHazards(f: CityFilters): Promise<CityHazard[]> {
-  return endpoint(`/v1/city/hazards?period=${f.period}`, async () => {
+  return endpoint(`/v1/city/hazards?${cityQuery(f)}`, async () => {
     if (isSimulatingEmpty()) return [];
     const days = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[f.period];
     const since = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(new Date(mockNow().getTime() - days * 86_400_000));
@@ -731,7 +746,7 @@ export function getCityHazards(f: CityFilters): Promise<CityHazard[]> {
 
 /** GET /v1/city/air-noise?period= — hour × weekday matrix (Mon..Sun). */
 export function getAirNoise(f: CityFilters): Promise<AirNoiseCell[][]> {
-  return endpoint(`/v1/city/air-noise?period=${f.period}`, async () => {
+  return endpoint(`/v1/city/air-noise?${cityQuery(f)}`, async () => {
     const c = await loadCity();
     if (isSimulatingEmpty()) return [];
     const seasonal = f.period === "12m" ? 1.04 : f.period === "90d" ? 0.97 : 1;
